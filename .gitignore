@@ -1,0 +1,19 @@
+# Node
+node_modules/
+dist/
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Storybook
+storybook-static/
+
+# macOS / Linux
+.DS_Store
+
+# Env
+.env*
+
+*storybook.log

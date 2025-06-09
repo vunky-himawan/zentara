@@ -1,0 +1,78 @@
+{
+  "name": "@vunky-himawan/zentara",
+  "version": "1.0.0",
+  "description": "Reusable UI components library",
+  "main": "index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "storybook dev -p 6006",
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "build-storybook": "storybook build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "lint": "biome lint ./src",
+    "lint:fix": "biome lint --apply ./src",
+    "format": "biome format --write ./src",
+    "format:check": "biome format ./src",
+    "check": "biome check ./src",
+    "check:fix": "biome check --apply ./src",
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm run test && npm run test:e2e"
+  },
+  "keywords": [],
+  "author": "Vunky Himawan",
+  "license": "ISC",
+  "engines": {
+    "pnpm": ">=10.0.0"
+  },
+  "packageManager": "pnpm@10.11.1",
+  "dependencies": {
+    "antd": "^5.25.4",
+    "lucide-react": "^0.513.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@chromatic-com/storybook": "^4.0.0",
+    "@playwright/test": "^1.52.0",
+    "@storybook/addon-a11y": "9.0.4",
+    "@storybook/addon-docs": "9.0.4",
+    "@storybook/addon-onboarding": "9.0.4",
+    "@storybook/addon-vitest": "9.0.4",
+    "@storybook/react": "^9.0.6",
+    "@storybook/react-vite": "9.0.4",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^22.15.29",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.5.1",
+    "@vitest/browser": "^3.2.1",
+    "@vitest/coverage-v8": "^3.2.1",
+    "jsdom": "^26.1.0",
+    "playwright": "^1.52.0",
+    "storybook": "9.0.4",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.1"
+  },
+  "peerDependencies": {
+    "antd": "^5.25.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
