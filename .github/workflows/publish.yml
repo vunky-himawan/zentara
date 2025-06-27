@@ -1,10 +1,15 @@
 name: CI/CD Pipeline
 
 on:
-  push:
-    branches: [develop, main]
+  # PR ke develop dan main - hanya build-test
   pull_request:
     branches: [develop, main]
+  
+  # Push/merge ke develop - build-test + publish-beta
+  push:
+    branches: [develop, main]
+  
+  # Manual action untuk publish production
   workflow_dispatch:
     inputs:
       version_type:
@@ -17,7 +22,7 @@ on:
           - minor
           - major
       custom_version:
-        description: 'Custom version (optional)'
+        description: 'Custom version (optional, overrides version_type)'
         required: false
         type: string
 
@@ -25,21 +30,49 @@ permissions:
   contents: write
   packages: write
   actions: read
+  pull-requests: read
 
 jobs:
+  # Job 1: Build dan Test (selalu jalan)
   build-test:
     runs-on: ubuntu-latest
     outputs:
-      should-deploy-beta: ${{ steps.check-branch.outputs.should-deploy-beta }}
-      should-deploy-prod: ${{ steps.check-branch.outputs.should-deploy-prod }}
+      should-publish-beta: ${{ steps.check-conditions.outputs.should-publish-beta }}
+      should-publish-prod: ${{ steps.check-conditions.outputs.should-publish-prod }}
+      branch-name: ${{ steps.check-conditions.outputs.branch-name }}
+      event-type: ${{ steps.check-conditions.outputs.event-type }}
     steps:
       - uses: actions/checkout@v4
       
       - name: Check deployment conditions
-        id: check-branch
+        id: check-conditions
         run: |
-          echo "should-deploy-beta=${{ github.ref == 'refs/heads/develop' && github.event_name == 'push' }}" >> $GITHUB_OUTPUT
-          echo "should-deploy-prod=${{ github.event_name == 'workflow_dispatch' }}" >> $GITHUB_OUTPUT
+          echo "Event: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Base ref: ${{ github.base_ref }}"
+          
+          # Determine if should publish beta (push to develop)
+          SHOULD_PUBLISH_BETA="false"
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            SHOULD_PUBLISH_BETA="true"
+          fi
+          
+          # Determine if should publish prod (manual dispatch)
+          SHOULD_PUBLISH_PROD="false"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            SHOULD_PUBLISH_PROD="true"
+          fi
+          
+          echo "should-publish-beta=$SHOULD_PUBLISH_BETA" >> $GITHUB_OUTPUT
+          echo "should-publish-prod=$SHOULD_PUBLISH_PROD" >> $GITHUB_OUTPUT
+          echo "branch-name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          echo "event-type=${{ github.event_name }}" >> $GITHUB_OUTPUT
+          
+          echo "🔍 Conditions:"
+          echo "  - Should publish beta: $SHOULD_PUBLISH_BETA"
+          echo "  - Should publish prod: $SHOULD_PUBLISH_PROD"
+          echo "  - Branch: ${{ github.ref_name }}"
+          echo "  - Event: ${{ github.event_name }}"
       
       - uses: pnpm/action-setup@v2
         with:
@@ -50,29 +83,49 @@ jobs:
           node-version: 22
           cache: "pnpm"
       
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm check
-      - run: pnpm exec playwright install --with-deps
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
       
-      - run: |
+      - name: Run checks
+        run: pnpm check
+      
+      - name: Install Playwright
+        run: pnpm exec playwright install --with-deps
+      
+      - name: Run tests
+        run: |
           if find . -type f \( -name "*.test.ts" -o -name "*.spec.ts" \) | grep -q .; then
+            echo "🧪 Running tests..."
             pnpm test
           else
-            echo "⚠️ No test files found"
+            echo "⚠️ No test files found, skipping tests"
           fi
       
-      - run: pnpm build
+      - name: Build project
+        run: |
+          echo "🏗️ Building project..."
+          pnpm build
       
-      - uses: actions/upload-artifact@v4
-        if: steps.check-branch.outputs.should-deploy-beta == 'true' || steps.check-branch.outputs.should-deploy-prod == 'true'
+      - name: Upload build artifacts
+        if: steps.check-conditions.outputs.should-publish-beta == 'true' || steps.check-conditions.outputs.should-publish-prod == 'true'
+        uses: actions/upload-artifact@v4
         with:
-          name: build-files
+          name: build-files-${{ github.sha }}
           path: dist/
           retention-days: 1
+      
+      - name: Build summary
+        run: |
+          echo "## 🎯 Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Event**: ${{ steps.check-conditions.outputs.event-type }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ steps.check-conditions.outputs.branch-name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Will publish beta**: ${{ steps.check-conditions.outputs.should-publish-beta }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Will publish prod**: ${{ steps.check-conditions.outputs.should-publish-prod }}" >> $GITHUB_STEP_SUMMARY
 
+  # Job 2: Publish Beta (hanya jika push ke develop)
   publish-beta:
     needs: build-test
-    if: needs.build-test.outputs.should-deploy-beta == 'true'
+    if: needs.build-test.outputs.should-publish-beta == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -90,11 +143,13 @@ jobs:
           registry-url: https://npm.pkg.github.com/
           cache: "pnpm"
       
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
       
-      - uses: actions/download-artifact@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: build-files
+          name: build-files-${{ github.sha }}
           path: dist/
       
       - name: Configure git
@@ -109,6 +164,7 @@ jobs:
           BETA="${VERSION}-beta.${TIMESTAMP}"
           npm version $BETA --no-git-tag-version
           echo "BETA_VERSION=$BETA" >> $GITHUB_ENV
+          echo "📦 Created beta version: $BETA"
       
       - name: Setup npm registry
         run: |
@@ -116,20 +172,32 @@ jobs:
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
       
       - name: Publish beta package
-        run: pnpm publish --tag beta --no-git-checks
+        run: |
+          echo "🚀 Publishing beta package..."
+          pnpm publish --tag beta --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       
-      - name: Commit and tag beta version  
+      - name: Commit and tag beta version
         run: |
           git add package.json
           git commit -m "chore: create beta version ${{ env.BETA_VERSION }}"
           git tag "v${{ env.BETA_VERSION }}"
           git push origin develop --tags
+          echo "✅ Beta version ${{ env.BETA_VERSION }} published and tagged"
+      
+      - name: Beta summary
+        run: |
+          echo "## 🚀 Beta Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ env.BETA_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Registry**: GitHub Packages" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: beta" >> $GITHUB_STEP_SUMMARY
+          echo "- **Install**: \`npm install @vunky-himawan/package@${{ env.BETA_VERSION }}\`" >> $GITHUB_STEP_SUMMARY
 
+  # Job 3: Publish Production (hanya manual dispatch)
   publish-production:
     needs: build-test
-    if: needs.build-test.outputs.should-deploy-prod == 'true'
+    if: needs.build-test.outputs.should-publish-prod == 'true'
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -149,11 +217,13 @@ jobs:
           registry-url: https://npm.pkg.github.com/
           cache: "pnpm"
       
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
       
-      - uses: actions/download-artifact@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: build-files
+          name: build-files-${{ github.sha }}
           path: dist/
       
       - name: Configure git
@@ -165,12 +235,15 @@ jobs:
         run: |
           if [ -n "${{ github.event.inputs.custom_version }}" ]; then
             NEW_VERSION="${{ github.event.inputs.custom_version }}"
+            echo "📝 Using custom version: $NEW_VERSION"
             npm version $NEW_VERSION --no-git-tag-version
           else
+            echo "📝 Bumping ${{ github.event.inputs.version_type }} version"
             npm version ${{ github.event.inputs.version_type }} --no-git-tag-version
             NEW_VERSION=$(node -p "require('./package.json').version")
           fi
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "📦 New production version: $NEW_VERSION"
       
       - name: Setup npm registry
         run: |
@@ -178,7 +251,9 @@ jobs:
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
       
       - name: Publish production package
-        run: pnpm publish --tag latest --no-git-checks
+        run: |
+          echo "🚀 Publishing production package..."
+          pnpm publish --tag latest --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       
@@ -188,6 +263,7 @@ jobs:
           git commit -m "chore: release version ${{ env.NEW_VERSION }}"
           git tag "v${{ env.NEW_VERSION }}"
           git push origin main --tags
+          echo "✅ Production version ${{ env.NEW_VERSION }} published and tagged"
       
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -199,3 +275,12 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Production summary
+        run: |
+          echo "## 🎉 Production Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ env.NEW_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Registry**: GitHub Packages" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: latest" >> $GITHUB_STEP_SUMMARY
+          echo "- **Install**: \`npm install @vunky-himawan/package@${{ env.NEW_VERSION }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **GitHub Release**: Created" >> $GITHUB_STEP_SUMMARY
