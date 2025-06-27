@@ -1,11 +1,14 @@
 name: Publish Beta
 
 on:
-  push:
-    branches: [develop]
+  workflow_run:
+    workflows: ["Build and Test"]
+    types:
+      - completed
 
 jobs:
   publish-dev:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'develop' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
