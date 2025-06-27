@@ -1,0 +1,201 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      custom_version:
+        description: 'Custom version (optional)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+  actions: read
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    outputs:
+      should-deploy-beta: ${{ steps.check-branch.outputs.should-deploy-beta }}
+      should-deploy-prod: ${{ steps.check-branch.outputs.should-deploy-prod }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check deployment conditions
+        id: check-branch
+        run: |
+          echo "should-deploy-beta=${{ github.ref == 'refs/heads/develop' && github.event_name == 'push' }}" >> $GITHUB_OUTPUT
+          echo "should-deploy-prod=${{ github.event_name == 'workflow_dispatch' }}" >> $GITHUB_OUTPUT
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 10.11.1
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+      
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm exec playwright install --with-deps
+      
+      - run: |
+          if find . -type f \( -name "*.test.ts" -o -name "*.spec.ts" \) | grep -q .; then
+            pnpm test
+          else
+            echo "⚠️ No test files found"
+          fi
+      
+      - run: pnpm build
+      
+      - uses: actions/upload-artifact@v4
+        if: steps.check-branch.outputs.should-deploy-beta == 'true' || steps.check-branch.outputs.should-deploy-prod == 'true'
+        with:
+          name: build-files
+          path: dist/
+          retention-days: 1
+
+  publish-beta:
+    needs: build-test
+    if: needs.build-test.outputs.should-deploy-beta == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 10.11.1
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com/
+          cache: "pnpm"
+      
+      - run: pnpm install --frozen-lockfile
+      
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-files
+          path: dist/
+      
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Create beta version
+        run: |
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          VERSION=$(node -p "require('./package.json').version")
+          BETA="${VERSION}-beta.${TIMESTAMP}"
+          npm version $BETA --no-git-tag-version
+          echo "BETA_VERSION=$BETA" >> $GITHUB_ENV
+      
+      - name: Setup npm registry
+        run: |
+          echo "@vunky-himawan:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
+      
+      - name: Publish beta package
+        run: pnpm publish --tag beta --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Commit and tag beta version  
+        run: |
+          git add package.json
+          git commit -m "chore: create beta version ${{ env.BETA_VERSION }}"
+          git tag "v${{ env.BETA_VERSION }}"
+          git push origin develop --tags
+
+  publish-production:
+    needs: build-test
+    if: needs.build-test.outputs.should-deploy-prod == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 10.11.1
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com/
+          cache: "pnpm"
+      
+      - run: pnpm install --frozen-lockfile
+      
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-files
+          path: dist/
+      
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Bump version
+        run: |
+          if [ -n "${{ github.event.inputs.custom_version }}" ]; then
+            NEW_VERSION="${{ github.event.inputs.custom_version }}"
+            npm version $NEW_VERSION --no-git-tag-version
+          else
+            npm version ${{ github.event.inputs.version_type }} --no-git-tag-version
+            NEW_VERSION=$(node -p "require('./package.json').version")
+          fi
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+      
+      - name: Setup npm registry
+        run: |
+          echo "@vunky-himawan:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
+      
+      - name: Publish production package
+        run: pnpm publish --tag latest --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Commit and tag production version
+        run: |
+          git add package.json
+          git commit -m "chore: release version ${{ env.NEW_VERSION }}"
+          git tag "v${{ env.NEW_VERSION }}"
+          git push origin main --tags
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.NEW_VERSION }}
+          name: Release v${{ env.NEW_VERSION }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
