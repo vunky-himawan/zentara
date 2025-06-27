@@ -1,0 +1,48 @@
+name: Publish Beta
+
+on:
+  workflow_run:
+    workflows: ["Build and Test"]
+    types:
+      - completed
+
+jobs:
+  publish-dev:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'develop' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 10.11.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com/
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-files-${{ github.sha }}
+          path: dist/
+      - run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+      - run: |
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          VERSION=$(node -p "require('./package.json').version")
+          BETA="${VERSION}-beta.${TIMESTAMP}"
+          npm version $BETA --no-git-tag-version
+          echo "BETA_VERSION=$BETA" >> $GITHUB_ENV
+      - run: |
+          echo "@vunky-himawan:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
+      - run: pnpm publish --tag beta --no-git-checks
+      - run: |
+          git add package.json
+          git commit -m "chore: create beta version ${{ env.BETA_VERSION }}"
+          git tag "v${{ env.BETA_VERSION }}"
+          git push origin develop --tags

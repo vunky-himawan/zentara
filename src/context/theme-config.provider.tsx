@@ -32,7 +32,7 @@ interface ThemeExtraToken {
 	};
 }
 
-interface ThemeConfigContext {
+interface IThemeConfigContext {
 	isDarkMode: boolean;
 	toggleTheme: () => void;
 	setTheme: (isDark: boolean) => void;
@@ -118,8 +118,8 @@ const mergeThemeColors = (base: ThemeColors, override?: Partial<ThemeColors>): T
 	...override,
 });
 
-// Context with default value
-const ThemeConfigContext = createContext<ThemeConfigContext | null>(null);
+// Context with default value - RENAMED to avoid conflict
+const ThemeContext = createContext<IThemeConfigContext | null>(null);
 
 export const ThemeConfigProvider: FC<ThemeConfigProviderProps> = ({
 	children,
@@ -156,7 +156,7 @@ export const ThemeConfigProvider: FC<ThemeConfigProviderProps> = ({
 
 	// Memoized context value
 	const contextValue = useMemo(
-		(): ThemeConfigContext => ({
+		(): IThemeConfigContext => ({
 			isDarkMode,
 			toggleTheme,
 			setTheme,
@@ -190,15 +190,15 @@ export const ThemeConfigProvider: FC<ThemeConfigProviderProps> = ({
 	}, [isDarkMode, themeConfig, getComponentTheme]);
 
 	return (
-		<ThemeConfigContext.Provider value={contextValue}>
+		<ThemeContext.Provider value={contextValue}>
 			<ConfigProvider theme={antdThemeConfig}>{children}</ConfigProvider>
-		</ThemeConfigContext.Provider>
+		</ThemeContext.Provider>
 	);
 };
 
 // Custom hook with better error handling and performance
 export const useThemeConfig = (componentName?: ComponentType) => {
-	const context = useContext(ThemeConfigContext);
+	const context = useContext(ThemeContext);
 
 	if (!context) {
 		throw new Error("useThemeConfig must be used within ThemeConfigProvider");
