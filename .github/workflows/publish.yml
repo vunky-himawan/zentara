@@ -33,6 +33,9 @@ jobs:
       - name: Lint and check formatting (Biome)
         run: pnpm check
 
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
+
       - name: Run tests
         run: pnpm test
 
