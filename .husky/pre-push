@@ -3,7 +3,7 @@
 
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-if [ "$BRANCH" = "main" ]; then
+if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "develop" ]; then
   echo "🚫 Cannot push directly to main!"
   exit 1
 fi
