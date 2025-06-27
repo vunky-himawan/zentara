@@ -37,7 +37,13 @@ jobs:
         run: pnpm exec playwright install --with-deps
 
       - name: Run tests
-        run: pnpm test
+        run: |
+          if find . -type f \( -name "*.test.ts" -o -name "*.test.tsx" -o -name "*.spec.ts" -o -name "*.spec.tsx" \) | grep -q .; then
+            echo "✅ Found test files. Running tests..."
+            pnpm test
+          else
+            echo "⚠️ No test files found. Skipping test step."
+          fi
 
       - name: Build library
         run: pnpm build

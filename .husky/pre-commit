@@ -1,3 +1,16 @@
-pnpm check
-pnpm build
-pnpm test
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🔍 Running check (biome/lint)..."
+pnpm check:fix || exit 1
+
+echo "🔨 Building project..."
+pnpm build || exit 1
+
+echo "🧪 Checking if unit test files exist..."
+if find . -type f \( -name "*.test.ts" -o -name "*.test.tsx" -o -name "*.spec.ts" -o -name "*.spec.tsx" \) | grep -q .; then
+  echo "✅ Unit test files found. Running vitest..."
+  pnpm test || exit 1
+else
+  echo "⚠️ No unit test files found. Skipping vitest."
+fi
