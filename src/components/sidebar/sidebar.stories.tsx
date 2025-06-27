@@ -19,40 +19,43 @@ type Story = StoryObj<typeof Sidebar>;
 
 export const Default: Story = {
 	decorators: [
-		(Story) => (
-			<ThemeConfigProvider
-				themeConfig={{
-					extra: {
-						global: {
-							modes: {
-								light: {
-									background: "#FFFFFF",
-									primary: "#fff",
-									secondary: "#E0D4F1",
-									text: "#000000",
-									textSecondary: "#E0D4F1",
+		(Story) => {
+			const Wrapper = () => (
+				<ThemeConfigProvider
+					themeConfig={{
+						extra: {
+							global: {
+								modes: {
+									light: {
+										background: "#FFFFFF",
+										primary: "#fff",
+										secondary: "#E0D4F1",
+										text: "#000000",
+										textSecondary: "#E0D4F1",
+									},
+								},
+							},
+							components: {
+								Sidebar: {
+									light: {
+										background: "#FFE1E0",
+										primary: "#FFFFFF",
+										secondary: "#E0D4F1",
+										text: "#FFFFFF",
+										textSecondary: "#E0D4F1",
+									},
 								},
 							},
 						},
-						components: {
-							Sidebar: {
-								light: {
-									background: "#FFE1E0",
-									primary: "#FFFFFF",
-									secondary: "#E0D4F1",
-									text: "#FFFFFF",
-									textSecondary: "#E0D4F1",
-								},
-							},
-						},
-					},
-				}}
-			>
-				<div style={{ height: "100vh" }}>
-					<Story />
-				</div>
-			</ThemeConfigProvider>
-		),
+					}}
+				>
+					<div style={{ height: "100vh" }}>
+						<Story />
+					</div>
+				</ThemeConfigProvider>
+			);
+			return <Wrapper />;
+		},
 	],
 	args: {
 		menuProps: {
