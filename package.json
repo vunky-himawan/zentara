@@ -1,5 +1,5 @@
 {
-  "name": "@vunky-himawan/zentara",
+  "name": "zentara",
   "version": "1.0.0",
   "description": "Reusable UI components library",
   "main": "index.js",
