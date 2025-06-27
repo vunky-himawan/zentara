@@ -5,10 +5,11 @@ on:
     workflows: ["Build and Test"]
     types:
       - completed
+    branches: [develop]
 
 jobs:
   publish-dev:
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'develop' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +26,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v4
         with:
-          name: build-files-${{ github.sha }}
+          name: build-files-${{ github.event.workflow_run.head_sha }}
           path: dist/
       - run: |
           git config --global user.name "github-actions[bot]"

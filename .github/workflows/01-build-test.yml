@@ -32,4 +32,4 @@ jobs:
         with:
           name: build-files-${{ github.sha }}
           path: dist/
-          retention-days: 1
+          retention-days: 7
