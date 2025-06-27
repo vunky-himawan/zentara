@@ -1,0 +1,32 @@
+.text-editor-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  p.is-editor-empty:first-child::before {
+    color: #adb5bd;
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+
+  blockquote {
+    border-left: 4px solid #dee2e6;
+    margin: 1.5rem 0;
+    padding: 1rem 0 0.5rem 1rem;
+    font-style: italic;
+  }
+}
+
+.text-editor-container:focus-within {
+  outline: none;
+  border: none;
+}
+
+.text-editor-container input:focus,
+.text-editor-container [contenteditable="true"]:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}

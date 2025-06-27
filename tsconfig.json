@@ -25,6 +25,6 @@
     },
     "types": ["node"]
   },
-  "include": ["src"],
+  "include": ["src", "src/types"],
   "exclude": ["dist", "node_modules", ".storybook", "storybook-static"]
 }
