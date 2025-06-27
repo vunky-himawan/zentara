@@ -1,69 +1,94 @@
 name: Publish Production
 
 on:
-  workflow_run:
-    workflows: ["Build and Test"]
-    types:
-      - completed
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      custom_version:
+        description: 'Custom version (optional, overrides version_type)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   publish-prod:
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
       - uses: pnpm/action-setup@v2
         with:
           version: 10.11.1
+      
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           registry-url: https://npm.pkg.github.com/
           cache: "pnpm"
+      
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-files-${{ github.sha }}
-          path: dist/
-      - run: |
+      
+      - run: pnpm check
+      
+      - run: pnpm build
+      
+      - name: Configure git
+        run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-      - id: version-bump
+      
+      - name: Bump version
         run: |
-          COMMITS=$(git log --oneline $(git describe --tags --abbrev=0)..HEAD 2>/dev/null || git log --oneline)
-          if echo "$COMMITS" | grep -qiE "BREAKING CHANGE|major:"; then
-            echo "bump=major" >> $GITHUB_OUTPUT
-          elif echo "$COMMITS" | grep -qiE "feat:|feature:|minor:"; then
-            echo "bump=minor" >> $GITHUB_OUTPUT
+          if [ -n "${{ github.event.inputs.custom_version }}" ]; then
+            NEW_VERSION="${{ github.event.inputs.custom_version }}"
+            npm version $NEW_VERSION --no-git-tag-version
           else
-            echo "bump=patch" >> $GITHUB_OUTPUT
+            npm version ${{ github.event.inputs.version_type }} --no-git-tag-version
+            NEW_VERSION=$(node -p "require('./package.json').version")
           fi
-      - run: |
-          npm version ${{ steps.version-bump.outputs.bump }} --no-git-tag-version
-          VERSION=$(node -p "require('./package.json').version")
-          echo "PROD_VERSION=$VERSION" >> $GITHUB_ENV
-      - run: |
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+      
+      - name: Setup npm registry
+        run: |
           echo "@vunky-himawan:registry=https://npm.pkg.github.com" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
-      - run: pnpm publish --tag latest --no-git-checks
-      - run: |
+      
+      - name: Publish production package
+        run: pnpm publish --tag latest --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Commit and tag production version
+        run: |
           git add package.json
-          git commit -m "chore: release version v${{ env.PROD_VERSION }}"
-          git tag "v${{ env.PROD_VERSION }}"
+          git commit -m "chore: release version ${{ env.NEW_VERSION }}"
+          git tag "v${{ env.NEW_VERSION }}"
           git push origin main --tags
-      - uses: actions/create-release@v1
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.NEW_VERSION }}
+          name: Release v${{ env.NEW_VERSION }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ env.PROD_VERSION }}
-          release_name: Release v${{ env.PROD_VERSION }}
-          body: |
-            ## Changes in v${{ env.PROD_VERSION }}
-            Auto-generated release from main branch.
-            ### Install
-            ```bash
-            pnpm add @vunky-himawan/zentara
-            ```
