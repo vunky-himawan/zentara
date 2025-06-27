@@ -30,24 +30,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Check code formatting
-        run: |
-          # Check if using Biome or ESLint
-          if [ -f "biome.json" ] || [ -f "biome.jsonc" ]; then
-            echo "🔍 Using Biome for linting and formatting"
-            pnpm biome ci
-          elif [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" ]; then
-            echo "🔍 Using ESLint for linting"
-            pnpm lint
-            # Check formatting if prettier is available
-            if [ -f ".prettierrc" ] || [ -f "prettier.config.js" ]; then
-              echo "🎨 Checking Prettier formatting"
-              pnpm format:check
-            fi
-          else
-            echo "⚠️ No linting configuration found (biome.json, .eslintrc, or eslint.config.js)"
-            echo "⚠️ Skipping linting step"
-          fi
+      - name: Lint and check formatting (Biome)
+        run: pnpm check:fix
 
       - name: Run tests
         run: pnpm test
