@@ -1,5 +1,5 @@
 {
-  "name": "@vunky-himawan/zentara",
+  "name": "zentara",
   "version": "1.0.0",
   "description": "Reusable UI components library",
   "main": "index.js",
@@ -87,6 +87,7 @@
     "react-dom": "^19.1.0"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }
