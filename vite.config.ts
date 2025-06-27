@@ -5,6 +5,15 @@ import tsConf from "vite-tsconfig-paths";
 
 export default defineConfig({
 	plugins: [react(), tsConf()],
+	resolve: {
+		alias: {
+			react: path.resolve(__dirname, "node_modules/react"),
+			"react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+		},
+	},
+	optimizeDeps: {
+		include: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
+	},
 	build: {
 		target: ["es2018"],
 		lib: {

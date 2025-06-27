@@ -12,6 +12,12 @@ const dirname =
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
 	plugins: [tsConf()],
+	resolve: {
+		alias: {
+			react: path.resolve(dirname, "node_modules/react"),
+			"react-dom": path.resolve(dirname, "node_modules/react-dom"),
+		},
+	},
 	test: {
 		environment: "jsdom",
 		globals: true,
