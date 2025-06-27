@@ -20,12 +20,12 @@ on:
 jobs:
   publish-prod:
     runs-on: ubuntu-latest
-    environment: production  # Optional: untuk approval process
+    environment: production
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: main  # Ensure we're on main branch
+          ref: main
       - uses: pnpm/action-setup@v2
         with:
           version: 10.11.1
