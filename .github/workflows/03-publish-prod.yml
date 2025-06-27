@@ -17,6 +17,10 @@ on:
         required: false
         type: string
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   publish-prod:
     runs-on: ubuntu-latest
@@ -26,22 +30,32 @@ jobs:
         with:
           fetch-depth: 0
           ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
       - uses: pnpm/action-setup@v2
         with:
           version: 10.11.1
+      
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           registry-url: https://npm.pkg.github.com/
           cache: "pnpm"
+      
       - run: pnpm install --frozen-lockfile
+      
       - run: pnpm check
+      
       - run: pnpm build
-      - run: |
+      
+      - name: Configure git
+        run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-      - run: |
+      
+      - name: Bump version
+        run: |
           if [ -n "${{ github.event.inputs.custom_version }}" ]; then
             NEW_VERSION="${{ github.event.inputs.custom_version }}"
             npm version $NEW_VERSION --no-git-tag-version
@@ -50,21 +64,31 @@ jobs:
             NEW_VERSION=$(node -p "require('./package.json').version")
           fi
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-      - run: |
+      
+      - name: Setup npm registry
+        run: |
           echo "@vunky-himawan:registry=https://npm.pkg.github.com" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
-      - run: pnpm publish --tag latest --no-git-checks
-      - run: |
+      
+      - name: Publish production package
+        run: pnpm publish --tag latest --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Commit and tag production version
+        run: |
           git add package.json
           git commit -m "chore: release version ${{ env.NEW_VERSION }}"
           git tag "v${{ env.NEW_VERSION }}"
           git push origin main --tags
-      - name: Create Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ env.NEW_VERSION }}
-          release_name: Release v${{ env.NEW_VERSION }}
+          name: Release v${{ env.NEW_VERSION }}
           draft: false
           prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
