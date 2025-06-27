@@ -1,5 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import tsConf from "vite-tsconfig-paths";
 
 import { defineConfig } from "vitest/config";
 
@@ -10,7 +11,14 @@ const dirname =
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
+	plugins: [tsConf()],
 	test: {
+		environment: "jsdom",
+		globals: true,
+		setupFiles: "./vitest.setup.ts",
+		alias: {
+			"@": path.resolve(__dirname, "./src"),
+		},
 		workspace: [
 			{
 				extends: true,

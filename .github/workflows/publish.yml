@@ -31,7 +31,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint and check formatting (Biome)
-        run: pnpm check:fix
+        run: pnpm check
 
       - name: Run tests
         run: pnpm test

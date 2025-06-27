@@ -1,4 +1,3 @@
-// src/components/AntdButton.stories.tsx
 import type { Meta, StoryObj } from "@storybook/react";
 import { AntdButton } from "./button";
 
