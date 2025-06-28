@@ -2,9 +2,13 @@
   "name": "@vunky-himawan/zentara",
   "version": "0.0.1",
   "description": "Reusable UI components library",
-  "main": "index.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    "import": "./dist/index.esm.js",
+    "require": "./dist/index.cjs"
+  },
   "files": [
     "dist"
   ],
