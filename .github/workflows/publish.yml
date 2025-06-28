@@ -165,6 +165,9 @@ jobs:
       
       - name: Publish beta
         run: pnpm publish --tag beta --no-git-checks
+
+      - name: Disable husky in CI
+        run: git config core.hooksPath /dev/null
       
       - name: Commit & tag beta
         run: |
@@ -238,6 +241,9 @@ jobs:
       
       - name: Publish production
         run: pnpm publish --tag latest --no-git-checks
+
+      - name: Disable husky in CI
+        run: git config core.hooksPath /dev/null
       
       - name: Commit and tag production version
         run: |
