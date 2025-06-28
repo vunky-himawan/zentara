@@ -176,8 +176,8 @@ jobs:
           git add package.json
           git commit -m "chore: create beta ${{ env.BETA_VERSION }}"
           git tag "v${{ env.BETA_VERSION }}"
-          git push origin develop --tags
-      
+          git push origin "v${{ env.BETA_VERSION }}"
+
       - name: Beta summary
         run: |
           echo "## 🚀 Beta Release Summary" >> $GITHUB_STEP_SUMMARY
