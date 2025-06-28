@@ -2,7 +2,7 @@ import { ThemeConfigProvider } from "@/context/theme-config.provider";
 import type { Meta, StoryObj } from "@storybook/react";
 import type { MenuProps } from "antd";
 import { Camera } from "lucide-react";
-import { Sidebar } from "./sidebar";
+import { Sidebar } from ".";
 
 const meta: Meta<typeof Sidebar> = {
 	title: "@zentara/Sidebar",
