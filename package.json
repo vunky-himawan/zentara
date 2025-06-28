@@ -1,6 +1,6 @@
 {
   "name": "@vunky-himawan/zentara",
-  "version": "0.0.1",
+  "version": "0.0.1-beta.37",
   "description": "Reusable UI components library",
   "main": "index.js",
   "module": "dist/index.esm.js",
