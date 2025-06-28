@@ -1,6 +1,6 @@
 {
-  "name": "zentara",
-  "version": "1.0.0",
+  "name": "@vunky-himawan/zentara",
+  "version": "0.0.1-beta.120250627175515",
   "description": "Reusable UI components library",
   "main": "index.js",
   "module": "dist/index.esm.js",
@@ -87,7 +87,6 @@
     "react-dom": "^19.1.0"
   },
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://npm.pkg.github.com/"
   }
 }

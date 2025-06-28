@@ -29,7 +29,6 @@ on:
 permissions:
   contents: write
   packages: write
-  actions: read
   pull-requests: read
 
 jobs:
@@ -137,7 +136,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://npm.pkg.github.com/
           cache: "pnpm"
       
       - name: Install dependencies
@@ -149,10 +147,12 @@ jobs:
           name: build-files-${{ github.sha }}
           path: dist/
       
-      - name: Configure git
+      - name: Setup npm registry
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          echo "@vunky-himawan:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${NPM_TOKEN}" >> .npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       
       - name: Create beta version
         run: |
@@ -163,25 +163,17 @@ jobs:
           echo "BETA_VERSION=$BETA" >> $GITHUB_ENV
           echo "📦 Created beta version: $BETA"
       
-      - name: Setup npm registry
-        run: |
-          echo "@vunky-himawan:registry=https://npm.pkg.github.com" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
+      - name: Publish beta
+        run: pnpm publish --tag beta --no-git-checks
       
-      - name: Publish beta package
+      - name: Commit & tag beta
         run: |
-          echo "🚀 Publishing beta package..."
-          pnpm publish --tag beta --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      
-      - name: Commit and tag beta version
-        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add package.json
-          git commit -m "chore: create beta version ${{ env.BETA_VERSION }}"
+          git commit -m "chore: create beta ${{ env.BETA_VERSION }}"
           git tag "v${{ env.BETA_VERSION }}"
           git push origin develop --tags
-          echo "✅ Beta version ${{ env.BETA_VERSION }} published and tagged"
       
       - name: Beta summary
         run: |
@@ -223,10 +215,12 @@ jobs:
           name: build-files-${{ github.sha }}
           path: dist/
       
-      - name: Configure git
+      - name: Setup npm registry
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          echo "@vunky-himawan:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${NPM_TOKEN}" >> .npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       
       - name: Bump version
         run: |
@@ -242,17 +236,8 @@ jobs:
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo "📦 New production version: $NEW_VERSION"
       
-      - name: Setup npm registry
-        run: |
-          echo "@vunky-himawan:registry=https://npm.pkg.github.com" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
-      
-      - name: Publish production package
-        run: |
-          echo "🚀 Publishing production package..."
-          pnpm publish --tag latest --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish production
+        run: pnpm publish --tag latest --no-git-checks
       
       - name: Commit and tag production version
         run: |
