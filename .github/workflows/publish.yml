@@ -157,15 +157,61 @@ jobs:
       - name: Disable husky in CI
         run: git config core.hooksPath /dev/null
 
-      - name: Bump beta version
+      - name: Generate unique beta version
         run: |
-          npm version prerelease --preid=beta --no-git-tag-version
-          NEW_VERSION=$(node -p "require('./package.json').version")
-          echo "BETA_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-          echo "📦 New beta version: $NEW_VERSION"
+          # Get current version and remove any existing prerelease suffix
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          BASE_VERSION=$(echo $CURRENT_VERSION | sed 's/-beta\.[0-9]*$//' | sed 's/-alpha\.[0-9]*$//')
+          
+          # Create unique beta version using GitHub run number
+          NEW_BETA_VERSION="$BASE_VERSION-beta.${{ github.run_number }}"
+          
+          echo "📦 Current version: $CURRENT_VERSION"
+          echo "📦 Base version: $BASE_VERSION"
+          echo "📦 New beta version: $NEW_BETA_VERSION"
+          
+          # Set the new version
+          npm version $NEW_BETA_VERSION --no-git-tag-version
+          
+          echo "BETA_VERSION=$NEW_BETA_VERSION" >> $GITHUB_ENV
       
-      - name: Publish beta
-        run: pnpm publish --tag beta --no-git-checks
+      - name: Verify version uniqueness
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          echo "🔍 Checking if version ${{ env.BETA_VERSION }} exists..."
+          
+          if npm view "$PACKAGE_NAME@${{ env.BETA_VERSION }}" version 2>/dev/null; then
+            echo "❌ Version ${{ env.BETA_VERSION }} already exists!"
+            echo "This should not happen with run number versioning."
+            exit 1
+          else
+            echo "✅ Version ${{ env.BETA_VERSION }} is available for publishing"
+          fi
+      
+      - name: Publish beta with retry
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          echo "🚀 Publishing $PACKAGE_NAME@${{ env.BETA_VERSION }} with beta tag..."
+          
+          # Retry logic for publish
+          RETRY_COUNT=0
+          MAX_RETRIES=3
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if pnpm publish --tag beta --no-git-checks; then
+              echo "✅ Successfully published ${{ env.BETA_VERSION }}"
+              break
+            else
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "⚠️ Publish failed, retrying in 5 seconds... (Attempt $RETRY_COUNT/$MAX_RETRIES)"
+                sleep 5
+              else
+                echo "❌ Publish failed after $MAX_RETRIES attempts"
+                exit 1
+              fi
+            fi
+          done
       
       - name: Commit & tag beta
         run: |
@@ -187,20 +233,28 @@ jobs:
           echo "- **Tag**: \`beta\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Registry**: GitHub Packages" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch**: \`develop\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run Number**: \`${{ github.run_number }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📥 Installation Commands" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "# Install beta version" >> $GITHUB_STEP_SUMMARY
+          echo "# Install specific beta version" >> $GITHUB_STEP_SUMMARY
           echo "npm install $PACKAGE_NAME@${{ env.BETA_VERSION }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "# Or install latest beta" >> $GITHUB_STEP_SUMMARY
+          echo "# Install latest beta" >> $GITHUB_STEP_SUMMARY
           echo "npm install $PACKAGE_NAME@beta" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
-          echo "- [Package on GitHub](https://github.com/${{ github.repository }}/packages)" >> $GITHUB_STEP_SUMMARY
-          echo "- [Commit](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
-          echo "- [Tag v${{ env.BETA_VERSION }}](https://github.com/${{ github.repository }}/releases/tag/v${{ env.BETA_VERSION }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [📦 Package on GitHub](https://github.com/${{ github.repository }}/packages)" >> $GITHUB_STEP_SUMMARY
+          echo "- [💾 Commit](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [🏷️ Tag v${{ env.BETA_VERSION }}](https://github.com/${{ github.repository }}/releases/tag/v${{ env.BETA_VERSION }})" >> $GITHUB_STEP_SUMMARY
+
+      - name: Cleanup on failure
+        if: failure()
+        run: |
+          echo "🧹 Cleaning up after failure..."
+          git checkout -- package.json || true
+          git clean -fd || true
 
   # Job 3: Publish Production (hanya manual dispatch)
   publish-production:
@@ -246,17 +300,58 @@ jobs:
       
       - name: Bump production version
         run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "📦 Current version: $CURRENT_VERSION"
+          
           if [ -n "${{ github.event.inputs.custom_version }}" ]; then
+            echo "🎯 Using custom version: ${{ github.event.inputs.custom_version }}"
             npm version "${{ github.event.inputs.custom_version }}" --no-git-tag-version
           else
+            echo "🎯 Bumping version type: ${{ github.event.inputs.version_type }}"
             npm version ${{ github.event.inputs.version_type }} --no-git-tag-version
           fi
+          
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo "📦 New production version: $NEW_VERSION"
       
-      - name: Publish production
-        run: pnpm publish --tag latest --no-git-checks
+      - name: Verify production version
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          echo "🔍 Checking if production version ${{ env.NEW_VERSION }} exists..."
+          
+          if npm view "$PACKAGE_NAME@${{ env.NEW_VERSION }}" version 2>/dev/null; then
+            echo "❌ Version ${{ env.NEW_VERSION }} already exists!"
+            echo "Please choose a different version or use a custom version."
+            exit 1
+          else
+            echo "✅ Version ${{ env.NEW_VERSION }} is available for publishing"
+          fi
+      
+      - name: Publish production with retry
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          echo "🚀 Publishing $PACKAGE_NAME@${{ env.NEW_VERSION }} with latest tag..."
+          
+          # Retry logic for publish
+          RETRY_COUNT=0
+          MAX_RETRIES=3
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if pnpm publish --tag latest --no-git-checks; then
+              echo "✅ Successfully published ${{ env.NEW_VERSION }}"
+              break
+            else
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "⚠️ Publish failed, retrying in 10 seconds... (Attempt $RETRY_COUNT/$MAX_RETRIES)"
+                sleep 10
+              else
+                echo "❌ Publish failed after $MAX_RETRIES attempts"
+                exit 1
+              fi
+            fi
+          done
       
       - name: Commit & tag production
         run: |
@@ -313,3 +408,10 @@ jobs:
           echo "- Release notes have been automatically generated" >> $GITHUB_STEP_SUMMARY
           echo "- Package is now available on GitHub Packages registry" >> $GITHUB_STEP_SUMMARY
           echo "- Tagged commit has been pushed to main branch" >> $GITHUB_STEP_SUMMARY
+
+      - name: Cleanup on failure
+        if: failure()
+        run: |
+          echo "🧹 Cleaning up after failure..."
+          git checkout -- package.json || true
+          git clean -fd || true
