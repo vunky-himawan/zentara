@@ -153,38 +153,54 @@ jobs:
           echo "//npm.pkg.github.com/:_authToken=${NPM_TOKEN}" >> .npmrc
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      
-      - name: Create beta version
-        run: |
-          TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          VERSION=$(node -p "require('./package.json').version")
-          BETA="${VERSION}-beta.${TIMESTAMP}"
-          npm version $BETA --no-git-tag-version
-          echo "BETA_VERSION=$BETA" >> $GITHUB_ENV
-          echo "📦 Created beta version: $BETA"
-      
-      - name: Publish beta
-        run: pnpm publish --tag beta --no-git-checks
 
       - name: Disable husky in CI
         run: git config core.hooksPath /dev/null
+
+      - name: Bump beta version
+        run: |
+          npm version prerelease --preid=beta --no-git-tag-version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "BETA_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "📦 New beta version: $NEW_VERSION"
+      
+      - name: Publish beta
+        run: pnpm publish --tag beta --no-git-checks
       
       - name: Commit & tag beta
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add package.json
-          git commit -m "chore: create beta ${{ env.BETA_VERSION }}"
+          git commit -m "chore: release beta ${{ env.BETA_VERSION }}"
           git tag "v${{ env.BETA_VERSION }}"
-          git push origin "v${{ env.BETA_VERSION }}"
+          git push origin develop --tags
 
       - name: Beta summary
         run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
           echo "## 🚀 Beta Release Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version**: ${{ env.BETA_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Package Information" >> $GITHUB_STEP_SUMMARY
+          echo "- **Package**: \`$PACKAGE_NAME\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: \`${{ env.BETA_VERSION }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: \`beta\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Registry**: GitHub Packages" >> $GITHUB_STEP_SUMMARY
-          echo "- **Tag**: beta" >> $GITHUB_STEP_SUMMARY
-          echo "- **Install**: \`npm install @vunky-himawan/package@${{ env.BETA_VERSION }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: \`develop\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📥 Installation Commands" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "# Install beta version" >> $GITHUB_STEP_SUMMARY
+          echo "npm install $PACKAGE_NAME@${{ env.BETA_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Or install latest beta" >> $GITHUB_STEP_SUMMARY
+          echo "npm install $PACKAGE_NAME@beta" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [Package on GitHub](https://github.com/${{ github.repository }}/packages)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Commit](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [Tag v${{ env.BETA_VERSION }}](https://github.com/${{ github.repository }}/releases/tag/v${{ env.BETA_VERSION }})" >> $GITHUB_STEP_SUMMARY
 
   # Job 3: Publish Production (hanya manual dispatch)
   publish-production:
@@ -224,51 +240,76 @@ jobs:
           echo "//npm.pkg.github.com/:_authToken=${NPM_TOKEN}" >> .npmrc
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Disable husky in CI
+        run: git config core.hooksPath /dev/null
       
-      - name: Bump version
+      - name: Bump production version
         run: |
           if [ -n "${{ github.event.inputs.custom_version }}" ]; then
-            NEW_VERSION="${{ github.event.inputs.custom_version }}"
-            echo "📝 Using custom version: $NEW_VERSION"
-            npm version $NEW_VERSION --no-git-tag-version
+            npm version "${{ github.event.inputs.custom_version }}" --no-git-tag-version
           else
-            echo "📝 Bumping ${{ github.event.inputs.version_type }} version"
             npm version ${{ github.event.inputs.version_type }} --no-git-tag-version
-            NEW_VERSION=$(node -p "require('./package.json').version")
           fi
+          NEW_VERSION=$(node -p "require('./package.json').version")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo "📦 New production version: $NEW_VERSION"
       
       - name: Publish production
         run: pnpm publish --tag latest --no-git-checks
-
-      - name: Disable husky in CI
-        run: git config core.hooksPath /dev/null
       
-      - name: Commit and tag production version
+      - name: Commit & tag production
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add package.json
-          git commit -m "chore: release version ${{ env.NEW_VERSION }}"
+          git commit -m "chore: release ${{ env.NEW_VERSION }}"
           git tag "v${{ env.NEW_VERSION }}"
           git push origin main --tags
-          echo "✅ Production version ${{ env.NEW_VERSION }} published and tagged"
       
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ env.NEW_VERSION }}
           name: Release v${{ env.NEW_VERSION }}
-          draft: false
-          prerelease: false
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Production summary
         run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PREVIOUS_VERSION=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null | sed 's/^v//' || echo "N/A")
           echo "## 🎉 Production Release Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version**: ${{ env.NEW_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Package Information" >> $GITHUB_STEP_SUMMARY
+          echo "- **Package**: \`$PACKAGE_NAME\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **New Version**: \`${{ env.NEW_VERSION }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Previous Version**: \`$PREVIOUS_VERSION\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version Type**: \`${{ github.event.inputs.version_type || 'custom' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: \`latest\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Registry**: GitHub Packages" >> $GITHUB_STEP_SUMMARY
-          echo "- **Tag**: latest" >> $GITHUB_STEP_SUMMARY
-          echo "- **Install**: \`npm install @vunky-himawan/package@${{ env.NEW_VERSION }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **GitHub Release**: Created" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: \`main\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📥 Installation Commands" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "# Install specific version" >> $GITHUB_STEP_SUMMARY
+          echo "npm install $PACKAGE_NAME@${{ env.NEW_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Install latest version" >> $GITHUB_STEP_SUMMARY
+          echo "npm install $PACKAGE_NAME@latest" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Update existing installation" >> $GITHUB_STEP_SUMMARY
+          echo "npm update $PACKAGE_NAME" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [📋 GitHub Release](https://github.com/${{ github.repository }}/releases/tag/v${{ env.NEW_VERSION }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [📦 Package on GitHub](https://github.com/${{ github.repository }}/packages)" >> $GITHUB_STEP_SUMMARY
+          echo "- [🔍 Compare Changes](https://github.com/${{ github.repository }}/compare/v$PREVIOUS_VERSION...v${{ env.NEW_VERSION }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [💾 Commit](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ℹ️ Additional Information" >> $GITHUB_STEP_SUMMARY
+          echo "- Release notes have been automatically generated" >> $GITHUB_STEP_SUMMARY
+          echo "- Package is now available on GitHub Packages registry" >> $GITHUB_STEP_SUMMARY
+          echo "- Tagged commit has been pushed to main branch" >> $GITHUB_STEP_SUMMARY
