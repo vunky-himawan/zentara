@@ -217,10 +217,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json
-          git commit -m "chore: release beta ${{ env.BETA_VERSION }}"
           git tag "v${{ env.BETA_VERSION }}"
-          git push origin develop --tags --no-verify
+          git push origin "v${{ env.BETA_VERSION }}" --no-verify
 
       - name: Beta summary
         run: |
@@ -357,10 +355,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json
-          git commit -m "chore: release ${{ env.NEW_VERSION }}"
           git tag "v${{ env.NEW_VERSION }}"
-          git push origin main --tags --no-verify
+          git push origin "v${{ env.NEW_VERSION }}" --no-verify
       
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
