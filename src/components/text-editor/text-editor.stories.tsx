@@ -1,6 +1,6 @@
+import { ThemeConfigProvider } from "@/context/theme-config.provider";
 import type { Meta, StoryObj } from "@storybook/react/*";
 import { TextEditor } from ".";
-import { ThemeConfigProvider } from "@/context/theme-config.provider";
 
 const meta: Meta<typeof TextEditor> = {
 	title: "@zentara/TextEditor",
@@ -8,12 +8,13 @@ const meta: Meta<typeof TextEditor> = {
 	argTypes: {
 		editor: {
 			control: { type: "object" },
-			description: "Optional editor instance to use. If not provided, a new editor will be created.",
+			description:
+				"Optional editor instance to use. If not provided, a new editor will be created.",
 		},
 		menubarItems: {
 			control: { type: "select" },
 			options: ["default", "none"],
-		}
+		},
 	},
 };
 export default meta;
