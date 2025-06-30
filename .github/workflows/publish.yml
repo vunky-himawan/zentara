@@ -411,3 +411,48 @@ jobs:
           echo "🧹 Cleaning up after failure..."
           git checkout -- package.json || true
           git clean -fd || true
+
+  storybook-gh-pages:
+    needs: build-test
+    runs-on: ubuntu-latest
+    if: needs.build-test.outputs.branch-name == 'develop'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 10.11.1
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Build Storybook
+        run: pnpm run build-storybook -o storybook-static
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./storybook-static
+
+  storybook-chromatic:
+    needs: build-test
+    runs-on: ubuntu-latest
+    if: needs.build-test.outputs.branch-name == 'main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 10.11.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Publish Storybook to Chromatic
+        run: pnpm exec chromatic --project-token=${{ secrets.CHROMATIC_PROJECT_TOKEN }}

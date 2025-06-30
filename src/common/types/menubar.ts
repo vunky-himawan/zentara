@@ -1,0 +1,17 @@
+export type MenubarItem =
+	| "heading"
+	| "bold"
+	| "italic"
+	| "strikethrough"
+	| "divider"
+	| "quote"
+	| "code"
+	| "link"
+	| "bulletList"
+	| "orderedList"
+	| "checkedList"
+	| "table"
+	| "image"
+	| "underline"
+	| "highlight"
+	| "taskList";
