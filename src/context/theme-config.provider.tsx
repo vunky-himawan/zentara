@@ -4,27 +4,27 @@ import { type FC, createContext, useCallback, useContext, useMemo, useState } fr
 
 // Base theme colors interface
 interface ThemeColors {
-	primary: string;
-	secondary: string;
-	background: string;
-	backgroundSecondary: string;
-	text: string;
-	textSecondary: string;
-	border: string;
-	success: string;
-	warning: string;
-	error: string;
-	info: string;
-	hover: string;
-	active: string;
-	disabled: string;
-	shadow: string;
+  primary: string;
+  secondary: string;
+  background: string;
+  backgroundSecondary: string;
+  text: string;
+  textSecondary: string;
+  border: string;
+  success: string;
+  warning: string;
+  error: string;
+  info: string;
+  hover: string;
+  active: string;
+  disabled: string;
+  shadow: string;
 }
 
 // Component theme definition
 interface ComponentTheme {
-	dark: ThemeColors;
-	light: ThemeColors;
+  dark: ThemeColors;
+  light: ThemeColors;
 }
 
 // Supported component types
@@ -32,231 +32,231 @@ type ComponentType = "Sidebar" | "Page" | "Header" | "Footer";
 
 // Theme configuration with better type safety
 interface ThemeExtraToken {
-	global?: {
-		modes?: {
-			dark?: Partial<ThemeColors>;
-			light?: Partial<ThemeColors>;
-		};
-	};
-	components?: {
-		[K in ComponentType]?: Partial<ComponentTheme>;
-	};
+  global?: {
+    modes?: {
+      dark?: Partial<ThemeColors>;
+      light?: Partial<ThemeColors>;
+    };
+  };
+  components?: {
+    [K in ComponentType]?: Partial<ComponentTheme>;
+  };
 }
 
 interface IThemeConfigContext {
-	isDarkMode: boolean;
-	toggleTheme: () => void;
-	setTheme: (isDark: boolean) => void;
-	getComponentTheme: (componentName?: ComponentType) => ThemeColors;
+  isDarkMode: boolean;
+  toggleTheme: () => void;
+  setTheme: (isDark: boolean) => void;
+  getComponentTheme: (componentName?: ComponentType) => ThemeColors;
 }
 
 interface CustomThemeConfig extends Omit<ThemeConfig, "algorithm"> {
-	extra?: ThemeExtraToken;
-	algorithm?: ThemeConfig["algorithm"];
+  extra?: ThemeExtraToken;
+  algorithm?: ThemeConfig["algorithm"];
 }
 
 interface ThemeConfigProviderProps {
-	children: React.ReactNode;
-	themeConfig?: CustomThemeConfig;
-	defaultDarkMode?: boolean;
+  children: React.ReactNode;
+  themeConfig?: CustomThemeConfig;
+  defaultDarkMode?: boolean;
 }
 
 // Default theme configuration
 const DEFAULT_THEME_CONFIG: CustomThemeConfig = {
-	extra: {
-		global: {
-			modes: {
-				dark: {},
-				light: {},
-			},
-		},
-		components: {},
-	},
+  extra: {
+    global: {
+      modes: {
+        dark: {},
+        light: {},
+      },
+    },
+    components: {},
+  },
 };
 
 // Component-specific defaults
 const COMPONENT_DEFAULTS: Record<ComponentType, ComponentTheme> = {
-	Sidebar: {
-		dark: DEFAULT_COLORS.dark,
-		light: DEFAULT_COLORS.light,
-	},
-	Page: {
-		dark: DEFAULT_COLORS.dark,
-		light: DEFAULT_COLORS.light,
-	},
-	Header: {
-		dark: DEFAULT_COLORS.dark,
-		light: DEFAULT_COLORS.light,
-	},
-	Footer: {
-		dark: DEFAULT_COLORS.dark,
-		light: DEFAULT_COLORS.light,
-	},
+  Sidebar: {
+    dark: DEFAULT_COLORS.dark,
+    light: DEFAULT_COLORS.light,
+  },
+  Page: {
+    dark: DEFAULT_COLORS.dark,
+    light: DEFAULT_COLORS.light,
+  },
+  Header: {
+    dark: DEFAULT_COLORS.dark,
+    light: DEFAULT_COLORS.light,
+  },
+  Footer: {
+    dark: DEFAULT_COLORS.dark,
+    light: DEFAULT_COLORS.light,
+  },
 };
 
 // Utility function to merge theme colors
 const mergeThemeColors = (base: ThemeColors, override?: Partial<ThemeColors>): ThemeColors => ({
-	...base,
-	...override,
+  ...base,
+  ...override,
 });
 
 // Deep merge function for theme configurations
 const mergeThemeConfig = (
-	defaultConfig: CustomThemeConfig,
-	userConfig?: CustomThemeConfig,
+  defaultConfig: CustomThemeConfig,
+  userConfig?: CustomThemeConfig,
 ): CustomThemeConfig => {
-	if (!userConfig) return defaultConfig;
+  if (!userConfig) return defaultConfig;
 
-	return {
-		...defaultConfig,
-		...userConfig,
-		extra: {
-			global: {
-				modes: {
-					dark: {
-						...defaultConfig.extra?.global?.modes?.dark,
-						...userConfig.extra?.global?.modes?.dark,
-					},
-					light: {
-						...defaultConfig.extra?.global?.modes?.light,
-						...userConfig.extra?.global?.modes?.light,
-					},
-				},
-			},
-			components: {
-				...defaultConfig.extra?.components,
-				...userConfig.extra?.components,
-			},
-		},
-	};
+  return {
+    ...defaultConfig,
+    ...userConfig,
+    extra: {
+      global: {
+        modes: {
+          dark: {
+            ...defaultConfig.extra?.global?.modes?.dark,
+            ...userConfig.extra?.global?.modes?.dark,
+          },
+          light: {
+            ...defaultConfig.extra?.global?.modes?.light,
+            ...userConfig.extra?.global?.modes?.light,
+          },
+        },
+      },
+      components: {
+        ...defaultConfig.extra?.components,
+        ...userConfig.extra?.components,
+      },
+    },
+  };
 };
 
 // Context with default value
 const ThemeContext = createContext<IThemeConfigContext | null>(null);
 
 export const ThemeConfigProvider: FC<ThemeConfigProviderProps> = ({
-	children,
-	themeConfig,
-	defaultDarkMode = false,
+  children,
+  themeConfig,
+  defaultDarkMode = false,
 }) => {
-	const [isDarkMode, setIsDarkMode] = useState(defaultDarkMode);
+  const [isDarkMode, setIsDarkMode] = useState(defaultDarkMode);
 
-	// Merge user config with defaults
-	const mergedThemeConfig = useMemo(
-		() => mergeThemeConfig(DEFAULT_THEME_CONFIG, themeConfig),
-		[themeConfig],
-	);
+  // Merge user config with defaults
+  const mergedThemeConfig = useMemo(
+    () => mergeThemeConfig(DEFAULT_THEME_CONFIG, themeConfig),
+    [themeConfig],
+  );
 
-	// Memoized callbacks to prevent unnecessary re-renders
-	const toggleTheme = useCallback(() => {
-		setIsDarkMode((prev) => !prev);
-	}, []);
+  // Memoized callbacks to prevent unnecessary re-renders
+  const toggleTheme = useCallback(() => {
+    setIsDarkMode((prev) => !prev);
+  }, []);
 
-	const setTheme = useCallback((isDark: boolean) => {
-		setIsDarkMode(isDark);
-	}, []);
+  const setTheme = useCallback((isDark: boolean) => {
+    setIsDarkMode(isDark);
+  }, []);
 
-	// Memoized function to get component theme
-	const getComponentTheme = useCallback(
-		(componentName?: ComponentType): ThemeColors => {
-			const mode = isDarkMode ? "dark" : "light";
+  // Memoized function to get component theme
+  const getComponentTheme = useCallback(
+    (componentName?: ComponentType): ThemeColors => {
+      const mode = isDarkMode ? "dark" : "light";
 
-			if (!componentName) {
-				return mergeThemeColors(
-					DEFAULT_COLORS[mode],
-					mergedThemeConfig.extra?.global?.modes?.[mode],
-				);
-			}
+      if (!componentName) {
+        return mergeThemeColors(
+          DEFAULT_COLORS[mode],
+          mergedThemeConfig.extra?.global?.modes?.[mode],
+        );
+      }
 
-			const componentConfig = mergedThemeConfig.extra?.components?.[componentName];
-			const baseTheme = COMPONENT_DEFAULTS[componentName]?.[mode] || DEFAULT_COLORS[mode];
+      const componentConfig = mergedThemeConfig.extra?.components?.[componentName];
+      const baseTheme = COMPONENT_DEFAULTS[componentName]?.[mode] || DEFAULT_COLORS[mode];
 
-			return mergeThemeColors(baseTheme, componentConfig?.[mode]);
-		},
-		[isDarkMode, mergedThemeConfig.extra],
-	);
+      return mergeThemeColors(baseTheme, componentConfig?.[mode]);
+    },
+    [isDarkMode, mergedThemeConfig.extra],
+  );
 
-	// Memoized context value
-	const contextValue = useMemo(
-		(): IThemeConfigContext => ({
-			isDarkMode,
-			toggleTheme,
-			setTheme,
-			getComponentTheme,
-		}),
-		[isDarkMode, toggleTheme, setTheme, getComponentTheme],
-	);
+  // Memoized context value
+  const contextValue = useMemo(
+    (): IThemeConfigContext => ({
+      isDarkMode,
+      toggleTheme,
+      setTheme,
+      getComponentTheme,
+    }),
+    [isDarkMode, toggleTheme, setTheme, getComponentTheme],
+  );
 
-	// Memoized Ant Design theme configuration
-	const antdThemeConfig = useMemo(() => {
-		const { darkAlgorithm, defaultAlgorithm } = antdTheme;
-		const globalTheme = getComponentTheme();
+  // Memoized Ant Design theme configuration
+  const antdThemeConfig = useMemo(() => {
+    const { darkAlgorithm, defaultAlgorithm } = antdTheme;
+    const globalTheme = getComponentTheme();
 
-		const algorithm =
-			mergedThemeConfig.algorithm || (isDarkMode ? darkAlgorithm : defaultAlgorithm);
+    const algorithm =
+      mergedThemeConfig.algorithm || (isDarkMode ? darkAlgorithm : defaultAlgorithm);
 
-		const { extra, ...restConfig } = mergedThemeConfig;
+    const { extra, ...restConfig } = mergedThemeConfig;
 
-		return {
-			...restConfig,
-			algorithm,
-			token: {
-				...restConfig.token,
-				colorPrimary: globalTheme.primary,
-				colorSuccess: globalTheme.success,
-				colorWarning: globalTheme.warning,
-				colorError: globalTheme.error,
-				colorInfo: globalTheme.info,
+    return {
+      ...restConfig,
+      algorithm,
+      token: {
+        ...restConfig.token,
+        colorPrimary: globalTheme.primary,
+        colorSuccess: globalTheme.success,
+        colorWarning: globalTheme.warning,
+        colorError: globalTheme.error,
+        colorInfo: globalTheme.info,
 
-				colorBgBase: globalTheme.background,
-				colorBgContainer: globalTheme.backgroundSecondary,
+        colorBgBase: globalTheme.background,
+        colorBgContainer: globalTheme.backgroundSecondary,
 
-				colorText: globalTheme.text,
-				colorTextSecondary: globalTheme.textSecondary,
-				colorTextDisabled: globalTheme.disabled,
+        colorText: globalTheme.text,
+        colorTextSecondary: globalTheme.textSecondary,
+        colorTextDisabled: globalTheme.disabled,
 
-				colorBorder: globalTheme.border,
+        colorBorder: globalTheme.border,
 
-				colorLinkHover: globalTheme.hover,
-				colorLinkActive: globalTheme.active,
+        colorLinkHover: globalTheme.hover,
+        colorLinkActive: globalTheme.active,
 
-				boxShadow: globalTheme.shadow,
-			},
-		};
-	}, [isDarkMode, mergedThemeConfig, getComponentTheme]);
+        boxShadow: globalTheme.shadow,
+      },
+    };
+  }, [isDarkMode, mergedThemeConfig, getComponentTheme]);
 
-	return (
-		<ThemeContext.Provider value={contextValue}>
-			<ConfigProvider theme={antdThemeConfig}>{children}</ConfigProvider>
-		</ThemeContext.Provider>
-	);
+  return (
+    <ThemeContext.Provider value={contextValue}>
+      <ConfigProvider theme={antdThemeConfig}>{children}</ConfigProvider>
+    </ThemeContext.Provider>
+  );
 };
 
 // Custom hook with better error handling and performance
 export const useThemeConfig = (componentName?: ComponentType) => {
-	const context = useContext(ThemeContext);
+  const context = useContext(ThemeContext);
 
-	if (!context) {
-		throw new Error("useThemeConfig must be used within ThemeConfigProvider");
-	}
+  if (!context) {
+    throw new Error("useThemeConfig must be used within ThemeConfigProvider");
+  }
 
-	// Memoize the theme to prevent unnecessary recalculations
-	const theme = useMemo(() => context.getComponentTheme(componentName), [context, componentName]);
+  // Memoize the theme to prevent unnecessary recalculations
+  const theme = useMemo(() => context.getComponentTheme(componentName), [context, componentName]);
 
-	return {
-		isDarkMode: context.isDarkMode,
-		toggleTheme: context.toggleTheme,
-		setTheme: context.setTheme,
-		theme,
-	};
+  return {
+    isDarkMode: context.isDarkMode,
+    toggleTheme: context.toggleTheme,
+    setTheme: context.setTheme,
+    theme,
+  };
 };
 
 // Type exports for better developer experience
 export type {
-	ThemeColors,
-	ComponentTheme,
-	ComponentType,
-	ThemeExtraToken,
-	CustomThemeConfig,
-	ThemeConfigProviderProps,
+  ThemeColors,
+  ComponentTheme,
+  ComponentType,
+  ThemeExtraToken,
+  CustomThemeConfig,
+  ThemeConfigProviderProps,
 };

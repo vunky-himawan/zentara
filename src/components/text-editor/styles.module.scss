@@ -32,7 +32,7 @@
     background: #343a40;
     border-radius: 0.5rem;
     color: #f8f9fa;
-    font-family: 'JetBrainsMono', monospace;
+    font-family: "JetBrainsMono", monospace;
     margin: 1.5rem 0;
     padding: 0.75rem 1rem;
 
@@ -97,7 +97,7 @@
   }
 
   mark {
-    background-color: #FAF594;
+    background-color: #faf594;
     border-radius: 0.4rem;
     box-decoration-break: clone;
     padding: 0.1rem 0.3rem;
@@ -133,7 +133,10 @@
     .selectedCell:after {
       background: #f3f4f6;
       content: "";
-      left: 0; right: 0; top: 0; bottom: 0;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
       pointer-events: none;
       position: absolute;
       z-index: 2;

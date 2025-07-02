@@ -9,5 +9,5 @@ setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
 
 // Apply Storybook's project annotations to Vitest
 beforeAll(async () => {
-	setProjectAnnotations(projectAnnotations);
+  setProjectAnnotations(projectAnnotations);
 });
