@@ -25,23 +25,7 @@ export const Default: Story = {
 	decorators: [
 		(Story) => {
 			const Wrapper = () => (
-				<ThemeConfigProvider
-					themeConfig={{
-						extra: {
-							global: {
-								modes: {
-									light: {
-										background: "#FFFFFF",
-										primary: "#ed6bff",
-										secondary: "#f3f4f6",
-										text: "#000000",
-										textSecondary: "#d1d5dc",
-									},
-								},
-							},
-						},
-					}}
-				>
+				<ThemeConfigProvider>
 					<div style={{ height: "100vh" }}>
 						<Story />
 					</div>

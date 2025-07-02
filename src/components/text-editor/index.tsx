@@ -12,7 +12,7 @@ import TableRow from "@tiptap/extension-table-row";
 import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import TextStyle from "@tiptap/extension-text-style";
-import { type Editor, EditorContent, useEditor } from "@tiptap/react";
+import { type Content, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Card, Space, Spin, type UploadProps } from "antd";
 import type { FC } from "react";
@@ -32,19 +32,27 @@ export type FeaturesConfig = {
 };
 
 interface TextEditorProps {
-	editor?: Editor;
+	content?: Content;
+	onChange?: (content: Content) => void;
 	menubarItems?: MenubarItem[];
 	featuresConfig?: FeaturesConfig;
 }
 
 export const TextEditor: FC<TextEditorProps> = ({
-	editor,
+	content,
+	onChange,
 	menubarItems = DEFAULT_MENUBAR_ITEMS,
 	featuresConfig = {},
 }) => {
-	const innerEditor = useEditor({
+	const editor = useEditor({
 		autofocus: true,
 		enableContentCheck: false,
+		content: content || "",
+		onUpdate: ({ editor }) => {
+			if (onChange) {
+				onChange(editor.getText());
+			}
+		},
 		extensions: [
 			ColoredUnderline,
 			StarterKit,
@@ -74,14 +82,12 @@ export const TextEditor: FC<TextEditorProps> = ({
 		],
 	});
 
-	const activeEditor = editor || innerEditor;
-
-	if (!activeEditor) return <Spin size="large" />;
+	if (!editor) return <Spin size="large" />;
 
 	const menubar = (
 		<TextEditorMenubar>
 			{menubarItems.map((item, index) =>
-				renderMenubarItem(item, activeEditor, `${item}-${index}`, featuresConfig),
+				renderMenubarItem(item, editor, `${item}-${index}`, featuresConfig),
 			)}
 		</TextEditorMenubar>
 	);
@@ -91,7 +97,7 @@ export const TextEditor: FC<TextEditorProps> = ({
 			{menubar}
 			<Card>
 				<EditorContent
-					editor={activeEditor}
+					editor={editor}
 					className={styles["text-editor-container"]}
 					spellCheck={false}
 				/>
