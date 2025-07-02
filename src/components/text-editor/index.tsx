@@ -24,84 +24,84 @@ import styles from "./styles.module.scss";
 import { TextEditorMenubar } from "./text-editor-menubar";
 
 export type ImageFeatureConfig = UploadProps & {
-	extractUrlFromResponse?: (response: unknown) => string;
+  extractUrlFromResponse?: (response: unknown) => string;
 };
 
 export type FeaturesConfig = {
-	image?: ImageFeatureConfig;
+  image?: ImageFeatureConfig;
 };
 
 interface TextEditorProps {
-	content?: Content;
-	onChange?: (content: Content) => void;
-	menubarItems?: MenubarItem[];
-	featuresConfig?: FeaturesConfig;
+  content?: Content;
+  onChange?: (content: Content) => void;
+  menubarItems?: MenubarItem[];
+  featuresConfig?: FeaturesConfig;
 }
 
 export const TextEditor: FC<TextEditorProps> = ({
-	content,
-	onChange,
-	menubarItems = DEFAULT_MENUBAR_ITEMS,
-	featuresConfig = {},
+  content,
+  onChange,
+  menubarItems = DEFAULT_MENUBAR_ITEMS,
+  featuresConfig = {},
 }) => {
-	const editor = useEditor({
-		autofocus: true,
-		enableContentCheck: false,
-		content: content || "",
-		onUpdate: ({ editor }) => {
-			if (onChange) {
-				onChange(editor.getText());
-			}
-		},
-		extensions: [
-			ColoredUnderline,
-			StarterKit,
-			TextStyle.configure({ mergeNestedSpanStyles: true }),
-			Placeholder.configure({
-				placeholder: "Type something...",
-				emptyEditorClass: styles["is-editor-empty"],
-			}),
-			Link.configure(linkConfig),
-			CodeBlockLowlight.configure(codeBlockLowlightConfig),
-			Highlight.configure({
-				multicolor: true,
-			}),
-			Table.configure({
-				resizable: true,
-			}),
-			TableRow,
-			TableHeader,
-			TableCell,
-			TaskList.configure({
-				itemTypeName: "taskItem",
-			}),
-			TaskItem.configure({
-				nested: true,
-			}),
-			Image,
-		],
-	});
+  const editor = useEditor({
+    autofocus: true,
+    enableContentCheck: false,
+    content: content || "",
+    onUpdate: ({ editor }) => {
+      if (onChange) {
+        onChange(editor.getText());
+      }
+    },
+    extensions: [
+      ColoredUnderline,
+      StarterKit,
+      TextStyle.configure({ mergeNestedSpanStyles: true }),
+      Placeholder.configure({
+        placeholder: "Type something...",
+        emptyEditorClass: styles["is-editor-empty"],
+      }),
+      Link.configure(linkConfig),
+      CodeBlockLowlight.configure(codeBlockLowlightConfig),
+      Highlight.configure({
+        multicolor: true,
+      }),
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      TaskList.configure({
+        itemTypeName: "taskItem",
+      }),
+      TaskItem.configure({
+        nested: true,
+      }),
+      Image,
+    ],
+  });
 
-	if (!editor) return <Spin size="large" />;
+  if (!editor) return <Spin size="large" />;
 
-	const menubar = (
-		<TextEditorMenubar>
-			{menubarItems.map((item, index) =>
-				renderMenubarItem(item, editor, `${item}-${index}`, featuresConfig),
-			)}
-		</TextEditorMenubar>
-	);
+  const menubar = (
+    <TextEditorMenubar>
+      {menubarItems.map((item, index) =>
+        renderMenubarItem(item, editor, `${item}-${index}`, featuresConfig),
+      )}
+    </TextEditorMenubar>
+  );
 
-	return (
-		<Space direction="vertical" style={{ width: "100%" }}>
-			{menubar}
-			<Card>
-				<EditorContent
-					editor={editor}
-					className={styles["text-editor-container"]}
-					spellCheck={false}
-				/>
-			</Card>
-		</Space>
-	);
+  return (
+    <Space direction="vertical" style={{ width: "100%" }}>
+      {menubar}
+      <Card>
+        <EditorContent
+          editor={editor}
+          className={styles["text-editor-container"]}
+          spellCheck={false}
+        />
+      </Card>
+    </Space>
+  );
 };

@@ -19,45 +19,45 @@ import { renderUnderline } from "./items/underline";
 import { TextEditorDivider } from "./text-editor-menubar";
 
 export const renderMenubarItem = (
-	item: MenubarItem,
-	editor: Editor,
-	key: string,
-	featuresConfig: FeaturesConfig,
+  item: MenubarItem,
+  editor: Editor,
+  key: string,
+  featuresConfig: FeaturesConfig,
 ): React.ReactNode => {
-	switch (item) {
-		case "heading":
-			return renderHeading(editor, key);
-		case "bold":
-			return renderBold(editor, key);
-		case "underline":
-			return renderUnderline(editor, key);
-		case "highlight":
-			return renderHighlight(editor, key);
-		case "italic":
-			return renderItalic(editor, key);
-		case "strikethrough":
-			return renderStrikethrough(editor, key);
-		case "quote":
-			return renderQuote(editor, key);
-		case "code":
-			return renderCode(editor, key);
-		case "link":
-			return renderLink(editor, key);
-		case "bulletList":
-			return renderBulletList(editor, key);
-		case "orderedList":
-			return renderNumberedList(editor, key);
-		case "taskList":
-			return renderTaskList(editor, key);
-		case "checkedList":
-			return renderChecklist(editor, key);
-		case "table":
-			return renderTable({ editor, maxRows: 6, maxCols: 6 });
-		case "image":
-			return renderImage(editor, key, featuresConfig.image);
-		case "divider":
-			return <TextEditorDivider key={key} />;
-		default:
-			return null;
-	}
+  switch (item) {
+    case "heading":
+      return renderHeading(editor, key);
+    case "bold":
+      return renderBold(editor, key);
+    case "underline":
+      return renderUnderline(editor, key);
+    case "highlight":
+      return renderHighlight(editor, key);
+    case "italic":
+      return renderItalic(editor, key);
+    case "strikethrough":
+      return renderStrikethrough(editor, key);
+    case "quote":
+      return renderQuote(editor, key);
+    case "code":
+      return renderCode(editor, key);
+    case "link":
+      return renderLink(editor, key);
+    case "bulletList":
+      return renderBulletList(editor, key);
+    case "orderedList":
+      return renderNumberedList(editor, key);
+    case "taskList":
+      return renderTaskList(editor, key);
+    case "checkedList":
+      return renderChecklist(editor, key);
+    case "table":
+      return renderTable({ editor, maxRows: 6, maxCols: 6 });
+    case "image":
+      return renderImage(editor, key, featuresConfig.image);
+    case "divider":
+      return <TextEditorDivider key={key} />;
+    default:
+      return null;
+  }
 };

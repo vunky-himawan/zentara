@@ -4,6 +4,6 @@ import { all, createLowlight } from "lowlight";
 const lowlight = createLowlight(all);
 
 export const codeBlockLowlightConfig: Partial<CodeBlockLowlightOptions> = {
-	lowlight,
-	languageClassPrefix: "language-",
+  lowlight,
+  languageClassPrefix: "language-",
 };

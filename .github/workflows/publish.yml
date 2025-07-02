@@ -4,25 +4,25 @@ on:
   # PR ke develop dan main - hanya build-test
   pull_request:
     branches: [develop, main]
-  
+
   # Push/merge ke develop - build-test + publish-beta
   push:
     branches: [develop, main]
-  
+
   # Manual action untuk publish production
   workflow_dispatch:
     inputs:
       version_type:
-        description: 'Version bump type'
+        description: "Version bump type"
         required: true
-        default: 'patch'
+        default: "patch"
         type: choice
         options:
           - patch
           - minor
           - major
       custom_version:
-        description: 'Custom version (optional, overrides version_type)'
+        description: "Custom version (optional, overrides version_type)"
         required: false
         type: string
 
@@ -42,52 +42,52 @@ jobs:
       event-type: ${{ steps.check-conditions.outputs.event-type }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Check deployment conditions
         id: check-conditions
         run: |
           echo "Event: ${{ github.event_name }}"
           echo "Ref: ${{ github.ref }}"
           echo "Base ref: ${{ github.base_ref }}"
-          
+
           # Determine if should publish beta (push to develop)
           SHOULD_PUBLISH_BETA="false"
           if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/develop" ]]; then
             SHOULD_PUBLISH_BETA="true"
           fi
-          
+
           # Determine if should publish prod (manual dispatch)
           SHOULD_PUBLISH_PROD="false"
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             SHOULD_PUBLISH_PROD="true"
           fi
-          
+
           echo "should-publish-beta=$SHOULD_PUBLISH_BETA" >> $GITHUB_OUTPUT
           echo "should-publish-prod=$SHOULD_PUBLISH_PROD" >> $GITHUB_OUTPUT
           echo "branch-name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           echo "event-type=${{ github.event_name }}" >> $GITHUB_OUTPUT
-          
+
           echo "🔍 Conditions:"
           echo "  - Should publish beta: $SHOULD_PUBLISH_BETA"
           echo "  - Should publish prod: $SHOULD_PUBLISH_PROD"
           echo "  - Branch: ${{ github.ref_name }}"
           echo "  - Event: ${{ github.event_name }}"
-      
+
       - uses: pnpm/action-setup@v2
         with:
           version: 10.11.1
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: "pnpm"
-      
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
-      - name: Run checks
-        run: pnpm check
-      
+
+      - name: Run lint
+        run: pnpm lint
+
       - name: Run tests
         run: |
           if find . -type f \( -name "*.test.ts" -o -name "*.spec.ts" \) | grep -q .; then
@@ -96,12 +96,12 @@ jobs:
           else
             echo "⚠️ No test files found, skipping tests"
           fi
-      
+
       - name: Build project
         run: |
           echo "🏗️ Building project..."
           pnpm build
-      
+
       - name: Upload build artifacts
         if: steps.check-conditions.outputs.should-publish-beta == 'true' || steps.check-conditions.outputs.should-publish-prod == 'true'
         uses: actions/upload-artifact@v4
@@ -109,7 +109,7 @@ jobs:
           name: build-files-${{ github.sha }}
           path: dist/
           retention-days: 1
-      
+
       - name: Build summary
         run: |
           echo "## 🎯 Build Summary" >> $GITHUB_STEP_SUMMARY
@@ -128,25 +128,25 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - uses: pnpm/action-setup@v2
         with:
           version: 10.11.1
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: "pnpm"
-      
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-files-${{ github.sha }}
           path: dist/
-      
+
       - name: Setup npm registry
         run: |
           echo "@vunky-himawan:registry=https://npm.pkg.github.com" > .npmrc
@@ -162,24 +162,24 @@ jobs:
           # Get current version and remove any existing prerelease suffix
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           BASE_VERSION=$(echo $CURRENT_VERSION | sed 's/-beta\.[0-9]*$//' | sed 's/-alpha\.[0-9]*$//')
-          
+
           # Create unique beta version using GitHub run number
           NEW_BETA_VERSION="$BASE_VERSION-beta.${{ github.run_number }}"
-          
+
           echo "📦 Current version: $CURRENT_VERSION"
           echo "📦 Base version: $BASE_VERSION"
           echo "📦 New beta version: $NEW_BETA_VERSION"
-          
+
           # Set the new version
           npm version $NEW_BETA_VERSION --no-git-tag-version
-          
+
           echo "BETA_VERSION=$NEW_BETA_VERSION" >> $GITHUB_ENV
-      
+
       - name: Verify version uniqueness
         run: |
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           echo "🔍 Checking if version ${{ env.BETA_VERSION }} exists..."
-          
+
           if npm view "$PACKAGE_NAME@${{ env.BETA_VERSION }}" version 2>/dev/null; then
             echo "❌ Version ${{ env.BETA_VERSION }} already exists!"
             echo "This should not happen with run number versioning."
@@ -187,16 +187,16 @@ jobs:
           else
             echo "✅ Version ${{ env.BETA_VERSION }} is available for publishing"
           fi
-      
+
       - name: Publish beta with retry
         run: |
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           echo "🚀 Publishing $PACKAGE_NAME@${{ env.BETA_VERSION }} with beta tag..."
-          
+
           # Retry logic for publish
           RETRY_COUNT=0
           MAX_RETRIES=3
-          
+
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
             if pnpm publish --tag beta --no-git-checks; then
               echo "✅ Successfully published ${{ env.BETA_VERSION }}"
@@ -212,7 +212,7 @@ jobs:
               fi
             fi
           done
-      
+
       - name: Commit & tag beta
         run: |
           git config user.name "github-actions[bot]"
@@ -266,26 +266,26 @@ jobs:
           fetch-depth: 0
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - uses: pnpm/action-setup@v2
         with:
           version: 10.11.1
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           registry-url: https://npm.pkg.github.com/
           cache: "pnpm"
-      
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-files-${{ github.sha }}
           path: dist/
-      
+
       - name: Setup npm registry
         run: |
           echo "@vunky-himawan:registry=https://npm.pkg.github.com" > .npmrc
@@ -295,12 +295,12 @@ jobs:
 
       - name: Disable husky in CI
         run: git config core.hooksPath /dev/null
-      
+
       - name: Bump production version
         run: |
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "📦 Current version: $CURRENT_VERSION"
-          
+
           if [ -n "${{ github.event.inputs.custom_version }}" ]; then
             echo "🎯 Using custom version: ${{ github.event.inputs.custom_version }}"
             npm version "${{ github.event.inputs.custom_version }}" --no-git-tag-version
@@ -308,16 +308,16 @@ jobs:
             echo "🎯 Bumping version type: ${{ github.event.inputs.version_type }}"
             npm version ${{ github.event.inputs.version_type }} --no-git-tag-version
           fi
-          
+
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo "📦 New production version: $NEW_VERSION"
-      
+
       - name: Verify production version
         run: |
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           echo "🔍 Checking if production version ${{ env.NEW_VERSION }} exists..."
-          
+
           if npm view "$PACKAGE_NAME@${{ env.NEW_VERSION }}" version 2>/dev/null; then
             echo "❌ Version ${{ env.NEW_VERSION }} already exists!"
             echo "Please choose a different version or use a custom version."
@@ -325,16 +325,16 @@ jobs:
           else
             echo "✅ Version ${{ env.NEW_VERSION }} is available for publishing"
           fi
-      
+
       - name: Publish production with retry
         run: |
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           echo "🚀 Publishing $PACKAGE_NAME@${{ env.NEW_VERSION }} with latest tag..."
-          
+
           # Retry logic for publish
           RETRY_COUNT=0
           MAX_RETRIES=3
-          
+
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
             if pnpm publish --tag latest --no-git-checks; then
               echo "✅ Successfully published ${{ env.NEW_VERSION }}"
@@ -350,14 +350,14 @@ jobs:
               fi
             fi
           done
-      
+
       - name: Commit & tag production
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag "v${{ env.NEW_VERSION }}"
           git push origin "v${{ env.NEW_VERSION }}" --no-verify
-      
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
@@ -366,7 +366,7 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Production summary
         run: |
           PACKAGE_NAME=$(node -p "require('./package.json').name")
@@ -421,7 +421,7 @@ jobs:
       - uses: pnpm/action-setup@v2
         with:
           version: 10.11.1
-          
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -429,7 +429,7 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        
+
       - name: Build Storybook
         run: pnpm run build-storybook -o storybook-static
 

@@ -5,9 +5,8 @@ import tsConf from "vite-tsconfig-paths";
 import react from "@vitejs/plugin-react";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 
-const dirname = typeof __dirname !== "undefined"
-  ? __dirname
-  : path.dirname(fileURLToPath(import.meta.url));
+const dirname =
+  typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
 const isVitestUI = process.argv.includes("--ui");
 
@@ -25,7 +24,7 @@ export default defineConfig({
     globals: true,
     setupFiles: "./vitest.setup.ts",
     exclude: ["**/*.stories.*", "node_modules", "dist"],
-	include: ["src/**/*.test.{ts,tsx}", "src/**/*.spec.{ts,tsx}"],
+    include: ["src/**/*.test.{ts,tsx}", "src/**/*.spec.{ts,tsx}"],
     ...(isVitestUI && {
       projects: [
         {
