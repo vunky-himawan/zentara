@@ -1,3 +1,4 @@
+import { DEFAULT_COLORS } from "@/common/constants/color";
 import { ThemeConfigProvider } from "@/context/theme-config.provider";
 import type { Meta, StoryObj } from "@storybook/react";
 import type { MenuProps } from "antd";
@@ -24,25 +25,11 @@ export const Default: Story = {
 				<ThemeConfigProvider
 					themeConfig={{
 						extra: {
-							global: {
-								modes: {
-									light: {
-										background: "#FFFFFF",
-										primary: "#fff",
-										secondary: "#E0D4F1",
-										text: "#000000",
-										textSecondary: "#E0D4F1",
-									},
-								},
-							},
 							components: {
 								Sidebar: {
 									light: {
-										background: "#FFE1E0",
-										primary: "#FFFFFF",
-										secondary: "#E0D4F1",
-										text: "#FFFFFF",
-										textSecondary: "#E0D4F1",
+										...DEFAULT_COLORS.light,
+										background: "#85dcb8",
 									},
 								},
 							},

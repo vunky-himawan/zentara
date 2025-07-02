@@ -1,3 +1,4 @@
+import { DEFAULT_COLORS } from "@/common/constants/color";
 import { ConfigProvider, type ThemeConfig, theme as antdTheme } from "antd";
 import { type FC, createContext, useCallback, useContext, useMemo, useState } from "react";
 
@@ -6,8 +7,18 @@ interface ThemeColors {
 	primary: string;
 	secondary: string;
 	background: string;
+	backgroundSecondary: string;
 	text: string;
 	textSecondary: string;
+	border: string;
+	success: string;
+	warning: string;
+	error: string;
+	info: string;
+	hover: string;
+	active: string;
+	disabled: string;
+	shadow: string;
 }
 
 // Component theme definition
@@ -22,7 +33,7 @@ type ComponentType = "Sidebar" | "Page" | "Header" | "Footer";
 // Theme configuration with better type safety
 interface ThemeExtraToken {
 	global?: {
-		modes: {
+		modes?: {
 			dark?: Partial<ThemeColors>;
 			light?: Partial<ThemeColors>;
 		};
@@ -40,67 +51,38 @@ interface IThemeConfigContext {
 }
 
 interface CustomThemeConfig extends Omit<ThemeConfig, "algorithm"> {
-	extra: ThemeExtraToken;
+	extra?: ThemeExtraToken;
 	algorithm?: ThemeConfig["algorithm"];
 }
 
 interface ThemeConfigProviderProps {
 	children: React.ReactNode;
-	themeConfig: CustomThemeConfig;
+	themeConfig?: CustomThemeConfig;
 	defaultDarkMode?: boolean;
 }
 
-// Default theme colors - moved outside component to prevent recreation
-const DEFAULT_COLORS: Record<"dark" | "light", ThemeColors> = {
-	dark: {
-		primary: "#1890ff",
-		secondary: "#f0f2f5",
-		background: "#001529",
-		text: "#ffffff",
-		textSecondary: "#d9d9d9",
-	},
-	light: {
-		primary: "#1890ff",
-		secondary: "#e6f7ff",
-		background: "#ffffff",
-		text: "#000000",
-		textSecondary: "#595959",
+// Default theme configuration
+const DEFAULT_THEME_CONFIG: CustomThemeConfig = {
+	extra: {
+		global: {
+			modes: {
+				dark: {},
+				light: {},
+			},
+		},
+		components: {},
 	},
 };
 
 // Component-specific defaults
 const COMPONENT_DEFAULTS: Record<ComponentType, ComponentTheme> = {
 	Sidebar: {
-		dark: {
-			primary: "#40c4ff",
-			secondary: "#b3e5fc",
-			background: "#000c17",
-			text: "#ffffff",
-			textSecondary: "#b0bec5",
-		},
-		light: {
-			primary: "#1890ff",
-			secondary: "#e6f7ff",
-			background: "#fafafa",
-			text: "#000000",
-			textSecondary: "#595959",
-		},
+		dark: DEFAULT_COLORS.dark,
+		light: DEFAULT_COLORS.light,
 	},
 	Page: {
-		dark: {
-			primary: "#0288d1",
-			secondary: "#b3e5fc",
-			background: "#000c17",
-			text: "#ffffff",
-			textSecondary: "#b0bec5",
-		},
-		light: {
-			primary: "#0288d1",
-			secondary: "#e1f5fe",
-			background: "#f5f5f5",
-			text: "#000000",
-			textSecondary: "#616161",
-		},
+		dark: DEFAULT_COLORS.dark,
+		light: DEFAULT_COLORS.light,
 	},
 	Header: {
 		dark: DEFAULT_COLORS.dark,
@@ -118,7 +100,38 @@ const mergeThemeColors = (base: ThemeColors, override?: Partial<ThemeColors>): T
 	...override,
 });
 
-// Context with default value - RENAMED to avoid conflict
+// Deep merge function for theme configurations
+const mergeThemeConfig = (
+	defaultConfig: CustomThemeConfig,
+	userConfig?: CustomThemeConfig,
+): CustomThemeConfig => {
+	if (!userConfig) return defaultConfig;
+
+	return {
+		...defaultConfig,
+		...userConfig,
+		extra: {
+			global: {
+				modes: {
+					dark: {
+						...defaultConfig.extra?.global?.modes?.dark,
+						...userConfig.extra?.global?.modes?.dark,
+					},
+					light: {
+						...defaultConfig.extra?.global?.modes?.light,
+						...userConfig.extra?.global?.modes?.light,
+					},
+				},
+			},
+			components: {
+				...defaultConfig.extra?.components,
+				...userConfig.extra?.components,
+			},
+		},
+	};
+};
+
+// Context with default value
 const ThemeContext = createContext<IThemeConfigContext | null>(null);
 
 export const ThemeConfigProvider: FC<ThemeConfigProviderProps> = ({
@@ -127,6 +140,12 @@ export const ThemeConfigProvider: FC<ThemeConfigProviderProps> = ({
 	defaultDarkMode = false,
 }) => {
 	const [isDarkMode, setIsDarkMode] = useState(defaultDarkMode);
+
+	// Merge user config with defaults
+	const mergedThemeConfig = useMemo(
+		() => mergeThemeConfig(DEFAULT_THEME_CONFIG, themeConfig),
+		[themeConfig],
+	);
 
 	// Memoized callbacks to prevent unnecessary re-renders
 	const toggleTheme = useCallback(() => {
@@ -143,15 +162,18 @@ export const ThemeConfigProvider: FC<ThemeConfigProviderProps> = ({
 			const mode = isDarkMode ? "dark" : "light";
 
 			if (!componentName) {
-				return mergeThemeColors(DEFAULT_COLORS[mode], themeConfig.extra.global?.modes[mode]);
+				return mergeThemeColors(
+					DEFAULT_COLORS[mode],
+					mergedThemeConfig.extra?.global?.modes?.[mode],
+				);
 			}
 
-			const componentConfig = themeConfig.extra.components?.[componentName];
+			const componentConfig = mergedThemeConfig.extra?.components?.[componentName];
 			const baseTheme = COMPONENT_DEFAULTS[componentName]?.[mode] || DEFAULT_COLORS[mode];
 
 			return mergeThemeColors(baseTheme, componentConfig?.[mode]);
 		},
-		[isDarkMode, themeConfig.extra],
+		[isDarkMode, mergedThemeConfig.extra],
 	);
 
 	// Memoized context value
@@ -170,9 +192,10 @@ export const ThemeConfigProvider: FC<ThemeConfigProviderProps> = ({
 		const { darkAlgorithm, defaultAlgorithm } = antdTheme;
 		const globalTheme = getComponentTheme();
 
-		const algorithm = themeConfig.algorithm || (isDarkMode ? darkAlgorithm : defaultAlgorithm);
+		const algorithm =
+			mergedThemeConfig.algorithm || (isDarkMode ? darkAlgorithm : defaultAlgorithm);
 
-		const { extra, ...restConfig } = themeConfig;
+		const { extra, ...restConfig } = mergedThemeConfig;
 
 		return {
 			...restConfig,
@@ -180,14 +203,27 @@ export const ThemeConfigProvider: FC<ThemeConfigProviderProps> = ({
 			token: {
 				...restConfig.token,
 				colorPrimary: globalTheme.primary,
-				colorBgBase: globalTheme.secondary,
-				colorBgContainer: globalTheme.background,
+				colorSuccess: globalTheme.success,
+				colorWarning: globalTheme.warning,
+				colorError: globalTheme.error,
+				colorInfo: globalTheme.info,
+
+				colorBgBase: globalTheme.background,
+				colorBgContainer: globalTheme.backgroundSecondary,
+
 				colorText: globalTheme.text,
-				colorTextDisabled: globalTheme.textSecondary,
-				colorBorder: globalTheme.textSecondary,
+				colorTextSecondary: globalTheme.textSecondary,
+				colorTextDisabled: globalTheme.disabled,
+
+				colorBorder: globalTheme.border,
+
+				colorLinkHover: globalTheme.hover,
+				colorLinkActive: globalTheme.active,
+
+				boxShadow: globalTheme.shadow,
 			},
 		};
-	}, [isDarkMode, themeConfig, getComponentTheme]);
+	}, [isDarkMode, mergedThemeConfig, getComponentTheme]);
 
 	return (
 		<ThemeContext.Provider value={contextValue}>
