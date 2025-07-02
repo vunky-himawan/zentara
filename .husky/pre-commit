@@ -2,7 +2,7 @@
 . "$(dirname "$0")/_/husky.sh"
 
 echo "🔍 Running check (biome/lint)..."
-pnpm check:fix || exit 1
+pnpm lint:fix || exit 1
 
 echo "🔨 Building project..."
 pnpm build || exit 1
