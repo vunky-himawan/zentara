@@ -101,7 +101,10 @@ const mergeThemeColors = (base: ThemeColors, override?: Partial<ThemeColors>): T
 });
 
 // Deep merge function for theme configurations
-const mergeThemeConfig = (defaultConfig: CustomThemeConfig, userConfig?: CustomThemeConfig): CustomThemeConfig => {
+const mergeThemeConfig = (
+	defaultConfig: CustomThemeConfig,
+	userConfig?: CustomThemeConfig,
+): CustomThemeConfig => {
 	if (!userConfig) return defaultConfig;
 
 	return {
@@ -139,9 +142,9 @@ export const ThemeConfigProvider: FC<ThemeConfigProviderProps> = ({
 	const [isDarkMode, setIsDarkMode] = useState(defaultDarkMode);
 
 	// Merge user config with defaults
-	const mergedThemeConfig = useMemo(() =>
-		mergeThemeConfig(DEFAULT_THEME_CONFIG, themeConfig),
-		[themeConfig]
+	const mergedThemeConfig = useMemo(
+		() => mergeThemeConfig(DEFAULT_THEME_CONFIG, themeConfig),
+		[themeConfig],
 	);
 
 	// Memoized callbacks to prevent unnecessary re-renders
@@ -161,7 +164,7 @@ export const ThemeConfigProvider: FC<ThemeConfigProviderProps> = ({
 			if (!componentName) {
 				return mergeThemeColors(
 					DEFAULT_COLORS[mode],
-					mergedThemeConfig.extra?.global?.modes?.[mode]
+					mergedThemeConfig.extra?.global?.modes?.[mode],
 				);
 			}
 
@@ -189,7 +192,8 @@ export const ThemeConfigProvider: FC<ThemeConfigProviderProps> = ({
 		const { darkAlgorithm, defaultAlgorithm } = antdTheme;
 		const globalTheme = getComponentTheme();
 
-		const algorithm = mergedThemeConfig.algorithm || (isDarkMode ? darkAlgorithm : defaultAlgorithm);
+		const algorithm =
+			mergedThemeConfig.algorithm || (isDarkMode ? darkAlgorithm : defaultAlgorithm);
 
 		const { extra, ...restConfig } = mergedThemeConfig;
 

@@ -82,7 +82,6 @@ export const TextEditor: FC<TextEditorProps> = ({
 		],
 	});
 
-
 	if (!editor) return <Spin size="large" />;
 
 	const menubar = (

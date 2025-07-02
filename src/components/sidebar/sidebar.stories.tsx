@@ -22,18 +22,20 @@ export const Default: Story = {
 	decorators: [
 		(Story) => {
 			const Wrapper = () => (
-				<ThemeConfigProvider themeConfig={{
-					extra: {
-						components: {
-							Sidebar: {
-								light: {
-									...DEFAULT_COLORS.light,
-									background: "#85dcb8",
-								}
-							}
-						}
-					}
-				}}>
+				<ThemeConfigProvider
+					themeConfig={{
+						extra: {
+							components: {
+								Sidebar: {
+									light: {
+										...DEFAULT_COLORS.light,
+										background: "#85dcb8",
+									},
+								},
+							},
+						},
+					}}
+				>
 					<div style={{ height: "100vh" }}>
 						<Story />
 					</div>
