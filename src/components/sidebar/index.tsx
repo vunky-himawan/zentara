@@ -12,11 +12,12 @@ interface TSidebarProps {
 
 export const Sidebar: React.FC<TSidebarProps> = ({ brandLogo, header, footer, menuProps }) => {
 	const { theme } = useThemeConfig("Sidebar");
+	const { background } = theme;
 
 	return (
 		<Sider
 			style={{
-				backgroundColor: theme.background,
+				backgroundColor: background,
 				padding: "10px",
 				color: theme.text,
 			}}
