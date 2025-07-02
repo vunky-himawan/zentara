@@ -1,9 +1,9 @@
+import { DEFAULT_COLORS } from "@/common/constants/color";
 import { ThemeConfigProvider } from "@/context/theme-config.provider";
 import type { Meta, StoryObj } from "@storybook/react";
 import type { MenuProps } from "antd";
 import { Camera } from "lucide-react";
 import { Sidebar } from ".";
-import { DEFAULT_COLORS } from "@/common/constants/color";
 
 const meta: Meta<typeof Sidebar> = {
 	title: "@zentara/Sidebar",
