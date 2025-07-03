@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-describe("Button component", () => {
+describe("Sidebar component", () => {
   it("should work", () => {
     expect(1 + 1).toBe(2);
   });
