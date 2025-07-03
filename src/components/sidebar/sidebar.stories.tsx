@@ -1,7 +1,7 @@
 import { DEFAULT_COLORS } from "@/common/constants/color";
 import { ThemeConfigProvider } from "@/context/theme-config.provider";
 import type { Meta, StoryObj } from "@storybook/react";
-import type { MenuProps } from "antd";
+import { type MenuProps } from "antd";
 import { Camera } from "lucide-react";
 import { Sidebar } from ".";
 
@@ -11,6 +11,26 @@ const meta: Meta<typeof Sidebar> = {
   argTypes: {
     menuProps: {
       control: { type: "object" },
+    },
+    header: {
+      control: false,
+      description: "Custom header content",
+    },
+    brandLogo: {
+      control: false,
+      description: "Custom brand logo content",
+    },
+    footer: {
+      control: false,
+      description: "Custom footer content",
+    },
+    width: {
+      control: { type: "number" },
+      description: "Width of the sidebar",
+    },
+    collapsible: {
+      control: { type: "boolean" },
+      description: "Whether the sidebar is collapsible",
     },
   },
 };
@@ -60,7 +80,10 @@ export const Default: Story = {
       ],
       defaultSelectedKeys: ["1"],
     } satisfies MenuProps,
-    brandLogo: <div style={{ padding: 8 }}>My Brand</div>,
-    footer: <div style={{ padding: 8 }}>© 2025</div>,
+  },
+  parameters: {
+    controls: {
+      exclude: ["collapsible", "width", "header", "brandLogo", "footer", "style"],
+    },
   },
 };
