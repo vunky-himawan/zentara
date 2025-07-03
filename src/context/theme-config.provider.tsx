@@ -132,7 +132,7 @@ const mergeThemeConfig = (
 };
 
 // Context with default value
-const ThemeContext = createContext<IThemeConfigContext | null>(null);
+export const ThemeContext = createContext<IThemeConfigContext | null>(null);
 
 export const ThemeConfigProvider: FC<ThemeConfigProviderProps> = ({
   children,
@@ -230,25 +230,6 @@ export const ThemeConfigProvider: FC<ThemeConfigProviderProps> = ({
       <ConfigProvider theme={antdThemeConfig}>{children}</ConfigProvider>
     </ThemeContext.Provider>
   );
-};
-
-// Custom hook with better error handling and performance
-export const useThemeConfig = (componentName?: ComponentType) => {
-  const context = useContext(ThemeContext);
-
-  if (!context) {
-    throw new Error("useThemeConfig must be used within ThemeConfigProvider");
-  }
-
-  // Memoize the theme to prevent unnecessary recalculations
-  const theme = useMemo(() => context.getComponentTheme(componentName), [context, componentName]);
-
-  return {
-    isDarkMode: context.isDarkMode,
-    toggleTheme: context.toggleTheme,
-    setTheme: context.setTheme,
-    theme,
-  };
 };
 
 // Type exports for better developer experience
