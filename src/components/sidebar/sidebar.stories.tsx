@@ -82,7 +82,7 @@ export const Default: Story = {
   },
   parameters: {
     controls: {
-      exclude: ["collapsible", "width", "header", "footer", "style"],
+      exclude: ["collapsible"],
     },
   },
 };
@@ -137,7 +137,7 @@ export const WithHeader: Story = {
   },
   parameters: {
     controls: {
-      exclude: ["footer"],
+      exclude: ["collapsible"],
     },
   },
 };
@@ -192,7 +192,7 @@ export const WithFooter: Story = {
   },
   parameters: {
     controls: {
-      exclude: ["header"],
+      exclude: ["collapsible"],
     },
   },
 };
