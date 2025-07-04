@@ -82,7 +82,7 @@ export const Default: Story = {
   },
   parameters: {
     controls: {
-      exclude: ["collapsible", "width", "header", "footer", "style"],
+      exclude: ["collapsible"],
     },
   },
 };
@@ -137,7 +137,62 @@ export const WithHeader: Story = {
   },
   parameters: {
     controls: {
-      exclude: ["collapsible", "width", "footer", "style"],
+      exclude: ["collapsible"],
+    },
+  },
+};
+
+export const WithFooter: Story = {
+  decorators: [
+    (Story) => {
+      const Wrapper = () => (
+        <ThemeConfigProvider
+          themeConfig={{
+            extra: {
+              components: {
+                Sidebar: {
+                  light: {
+                    ...DEFAULT_COLORS.light,
+                    background: "#85dcb8",
+                  },
+                },
+              },
+            },
+          }}
+        >
+          <div style={{ height: "100vh" }}>
+            <Story />
+          </div>
+        </ThemeConfigProvider>
+      );
+      return <Wrapper />;
+    },
+  ],
+  args: {
+    footer: (
+      <Flex align="center" justify="center" style={{ width: "100%" }}>
+        <Title level={3}>Your Custom Footer</Title>
+      </Flex>
+    ),
+    menuProps: {
+      items: [
+        {
+          key: "1",
+          icon: <LucideIcon Icon={LayoutDashboard} />,
+          label: "Dashboard",
+        },
+        {
+          key: "2",
+          icon: <LucideIcon Icon={Settings} />,
+          label: "Settings",
+        },
+      ],
+      defaultSelectedKeys: ["1"],
+    } satisfies MenuProps,
+  },
+  parameters: {
+    controls: {
+      exclude: ["collapsible"],
     },
   },
 };
