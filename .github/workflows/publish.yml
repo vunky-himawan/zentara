@@ -413,33 +413,48 @@ jobs:
           git clean -fd || true
 
   storybook-gh-pages:
-    needs: publish-beta
+    needs: build-test
     runs-on: ubuntu-latest
-    if: needs.build-test.outputs.branch-name == 'develop'
+    if: needs.build-test.outputs.branch-name == 'develop' && (github.event_name == 'push' || github.event_name == 'pull_request')
     steps:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v2
-      
+        with:
+          version: 10.11.1
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: "pnpm"
-      - run: pnpm install --frozen-lockfile
-      
-      - run: rm -rf node_modules/.cache storybook-static
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Clear cache and build directories
+        run: |
+          rm -rf node_modules/.cache storybook-static .storybook-cache
+          echo "🧹 Cleared all cache directories"
 
       - name: Build Storybook
-        run: pnpm run build-storybook -o storybook-static
+        run: |
+          echo "🔨 Building Storybook..."
+          pnpm run build-storybook --output-dir storybook-static
 
       - name: List Storybook files
-        run: ls -R storybook-static
-        
-      - uses: peaceiris/actions-gh-pages@v3
+        run: |
+          echo "📁 Storybook build contents:"
+          ls -la storybook-static/
+          echo "📄 Checking for story files..."
+          find storybook-static -name "*.js" -o -name "*.html" | head -10
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./storybook-static
           keep_files: false
+          force_orphan: true
 
   storybook-chromatic:
     needs: build-test
