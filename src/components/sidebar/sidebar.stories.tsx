@@ -1,9 +1,12 @@
 import { DEFAULT_COLORS } from "@/common/constants/color";
 import { ThemeConfigProvider } from "@/context/theme-config.provider";
 import type { Meta, StoryObj } from "@storybook/react";
-import { type MenuProps } from "antd";
-import { Camera } from "lucide-react";
+import { Flex, type MenuProps, Typography } from "antd";
+import { Camera, LayoutDashboard, Settings } from "lucide-react";
 import { Sidebar } from ".";
+import { LucideIcon } from "../lucide-icon";
+
+const { Title } = Typography;
 
 const meta: Meta<typeof Sidebar> = {
   title: "@zentara/Sidebar",
@@ -15,10 +18,6 @@ const meta: Meta<typeof Sidebar> = {
     header: {
       control: false,
       description: "Custom header content",
-    },
-    brandLogo: {
-      control: false,
-      description: "Custom brand logo content",
     },
     footer: {
       control: false,
@@ -83,7 +82,62 @@ export const Default: Story = {
   },
   parameters: {
     controls: {
-      exclude: ["collapsible", "width", "header", "brandLogo", "footer", "style"],
+      exclude: ["collapsible", "width", "header", "footer", "style"],
+    },
+  },
+};
+
+export const WithHeader: Story = {
+  decorators: [
+    (Story) => {
+      const Wrapper = () => (
+        <ThemeConfigProvider
+          themeConfig={{
+            extra: {
+              components: {
+                Sidebar: {
+                  light: {
+                    ...DEFAULT_COLORS.light,
+                    background: "#85dcb8",
+                  },
+                },
+              },
+            },
+          }}
+        >
+          <div style={{ height: "100vh" }}>
+            <Story />
+          </div>
+        </ThemeConfigProvider>
+      );
+      return <Wrapper />;
+    },
+  ],
+  args: {
+    header: (
+      <Flex align="center" justify="center" style={{ width: "100%" }}>
+        <Title level={3}>Your Brand Logo</Title>
+      </Flex>
+    ),
+    menuProps: {
+      items: [
+        {
+          key: "1",
+          icon: <LucideIcon Icon={LayoutDashboard} />,
+          label: "Dashboard",
+        },
+        {
+          key: "2",
+          icon: <LucideIcon Icon={Settings} />,
+          label: "Settings",
+        },
+      ],
+      defaultSelectedKeys: ["1"],
+    } satisfies MenuProps,
+  },
+  parameters: {
+    controls: {
+      exclude: ["collapsible", "width", "footer", "style"],
     },
   },
 };

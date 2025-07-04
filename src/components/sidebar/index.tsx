@@ -7,7 +7,6 @@ import { LucideIcon } from "../lucide-icon";
 import { IndentDecrease, IndentIncrease } from "lucide-react";
 
 interface TSidebarProps {
-  brandLogo?: React.ReactNode;
   style?: React.CSSProperties;
   header?: React.ReactNode;
   footer?: React.ReactNode;
@@ -16,7 +15,6 @@ interface TSidebarProps {
 }
 
 export const Sidebar: FC<TSidebarProps & Omit<SiderProps, "collapsible">> = ({
-  brandLogo,
   header,
   footer,
   menuProps,
@@ -51,18 +49,18 @@ export const Sidebar: FC<TSidebarProps & Omit<SiderProps, "collapsible">> = ({
       <Flex vertical align="center" justify="space-between" style={{ height: "100%", padding: 0 }}>
         <Col
           style={{
-            height: !brandLogo && !header ? 60 : "auto",
+            height:  !header ? 60 : "auto",
             minHeight: 60,
             width: "100%",
             position: "relative",
-            display: !collapsible && !brandLogo && !header ? "none" : "flex",
+            display: !collapsible && !header ? "none" : "flex",
           }}
         >
-          {brandLogo && !header && <>{brandLogo}</>}
           {header && !collapsed && <>{header}</>}
           {collapsible && (
             <Button
               type="text"
+              data-testid="sidebar-collapse-button"
               icon={<LucideIcon Icon={collapsed ? IndentIncrease : IndentDecrease} />}
               onClick={() => {
                 setCollapsed(!collapsed);
