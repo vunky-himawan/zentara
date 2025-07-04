@@ -49,7 +49,7 @@ export const Sidebar: FC<TSidebarProps & Omit<SiderProps, "collapsible">> = ({
       <Flex vertical align="center" justify="space-between" style={{ height: "100%", padding: 0 }}>
         <Col
           style={{
-            height:  !header ? 60 : "auto",
+            height: !header ? 60 : "auto",
             minHeight: 60,
             width: "100%",
             position: "relative",
