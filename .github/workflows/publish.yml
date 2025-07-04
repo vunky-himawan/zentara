@@ -413,31 +413,33 @@ jobs:
           git clean -fd || true
 
   storybook-gh-pages:
-    needs: build-test
+    needs: publish-beta
     runs-on: ubuntu-latest
     if: needs.build-test.outputs.branch-name == 'develop'
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 10.11.1
 
+      - uses: pnpm/action-setup@v2
+      
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile
+      
+      - run: rm -rf node_modules/.cache storybook-static
 
       - name: Build Storybook
         run: pnpm run build-storybook -o storybook-static
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: List Storybook files
+        run: ls -R storybook-static
+        
+      - uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./storybook-static
+          keep_files: false
 
   storybook-chromatic:
     needs: build-test
