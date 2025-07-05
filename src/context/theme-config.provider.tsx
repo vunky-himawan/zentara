@@ -28,7 +28,7 @@ interface ComponentTheme {
 }
 
 // Supported component types
-type ComponentType = "Sidebar" | "Page" | "Header" | "Footer";
+type ComponentType = "Sidebar" | "Header";
 
 // Theme configuration with better type safety
 interface ThemeExtraToken {
@@ -98,15 +98,7 @@ const COMPONENT_DEFAULTS: Record<ComponentType, ComponentTheme> = {
     dark: DEFAULT_COLORS.dark,
     light: DEFAULT_COLORS.light,
   },
-  Page: {
-    dark: DEFAULT_COLORS.dark,
-    light: DEFAULT_COLORS.light,
-  },
   Header: {
-    dark: DEFAULT_COLORS.dark,
-    light: DEFAULT_COLORS.light,
-  },
-  Footer: {
     dark: DEFAULT_COLORS.dark,
     light: DEFAULT_COLORS.light,
   },
