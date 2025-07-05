@@ -6,31 +6,66 @@ import { FC } from "react";
 import { LucideIcon } from "../lucide-icon";
 import { IndentDecrease, IndentIncrease } from "lucide-react";
 
-interface TSidebarProps {
-  style?: React.CSSProperties;
+type ExtraSidebarProps = {
   header?: React.ReactNode;
   footer?: React.ReactNode;
+};
+
+export interface SidebarProps {
+  style?: React.CSSProperties;
+  extra?: Partial<ExtraSidebarProps>;
+  brandLogo?: React.ReactNode;
   collapsible?: boolean;
+  /**
+   * - `undefined`: Sidebar will render default button.
+   * - `false`: Sidebar will not render button.
+   * - ReactNode: Sidebar will render this custom button.
+   */
+  collapsibleButton?: React.ReactNode | false;
   menuProps?: MenuProps;
 }
 
-export const Sidebar: FC<TSidebarProps & Omit<SiderProps, "collapsible">> = ({
-  header,
-  footer,
+export const Sidebar: FC<SidebarProps & Omit<SiderProps, "collapsible">> = ({
+  extra = {},
+  brandLogo,
   menuProps,
   collapsible = false,
+  collapsibleButton,
   style,
   ...props
 }) => {
-  // Get theme configuration for the sidebar
-  // This will provide the background color and other theme-related styles
+  const { header, footer } = extra;
+
   const { theme } = useThemeConfig("Sidebar");
   const { background } = theme;
 
-  // Use sidebar config only if collapsible is true
   const sidebarConfig = collapsible ? useSidebarConfig() : null;
-  const collapsed = sidebarConfig?.collapsed ?? false;
-  const setCollapsed = sidebarConfig?.setCollapsed ?? (() => {});
+  const collapsed = sidebarConfig?.collapsed || false;
+  const setCollapsed = sidebarConfig?.setCollapsed || (() => {});
+
+  // Determine what button to render
+  const renderCollapsibleButton = () => {
+    if (!collapsible) return null;
+    if (collapsibleButton === false) return null;
+    if (collapsibleButton) return collapsibleButton;
+    return (
+      <Button
+        type="text"
+        data-testid="sidebar-collapse-button"
+        icon={<LucideIcon Icon={collapsed ? IndentIncrease : IndentDecrease} />}
+        onClick={() => {
+          setCollapsed(!collapsed);
+        }}
+      />
+    );
+  };
+
+  const transitionStyle = (collapsed: boolean): React.CSSProperties => ({
+    transition: "all 0.3s ease",
+    opacity: collapsed ? 0 : 1,
+    maxHeight: collapsed ? 0 : 100,
+    overflow: "hidden",
+  });
 
   return (
     <Sider
@@ -44,37 +79,45 @@ export const Sidebar: FC<TSidebarProps & Omit<SiderProps, "collapsible">> = ({
       width={props.width || 280}
       collapsed={collapsed}
       {...props}
-      collapsible={false} // Ant Design Sider's collapsible prop is not used here, we handle it manually
+      collapsible={false} // we handle manually
     >
-      <Flex vertical align="center" justify="space-between" style={{ height: "100%", padding: 0 }}>
-        <Col
-          style={{
-            height: !header ? 60 : "auto",
-            minHeight: 60,
-            width: "100%",
-            position: "relative",
-            display: !collapsible && !header ? "none" : "flex",
-          }}
-        >
-          {header && !collapsed && <>{header}</>}
-          {collapsible && (
-            <Button
-              type="text"
-              data-testid="sidebar-collapse-button"
-              icon={<LucideIcon Icon={collapsed ? IndentIncrease : IndentDecrease} />}
-              onClick={() => {
-                setCollapsed(!collapsed);
-              }}
+      <Flex vertical justify="space-between" style={{ height: "100%", padding: 0 }}>
+        {(brandLogo || collapsible) && (
+          <Flex
+            align="center"
+            justify="space-between"
+            style={{
+              minHeight: 60,
+              width: "100%",
+              padding: "0 12px",
+            }}
+          >
+            <Col
+              flex={1}
               style={{
-                position: "absolute",
-                top: 10,
-                right: -18,
-                background: "rgba(243, 244, 246, 0.70)",
-                borderRadius: "100%",
+                ...transitionStyle(collapsed),
               }}
-            />
-          )}
-        </Col>
+            >
+              {!collapsed && brandLogo}
+            </Col>
+            <Col flex={collapsed ? 1 : "none"}>{renderCollapsibleButton()}</Col>
+          </Flex>
+        )}
+
+        {header && (
+          <Flex
+            align="center"
+            justify="center"
+            style={{
+              width: "100%",
+              padding: "0 12px",
+              ...transitionStyle(collapsed),
+            }}
+          >
+            {header}
+          </Flex>
+        )}
+
         <Space
           direction="vertical"
           size={20}
@@ -86,7 +129,20 @@ export const Sidebar: FC<TSidebarProps & Omit<SiderProps, "collapsible">> = ({
             )}
           </Col>
         </Space>
-        {footer && <>{footer}</>}
+
+        {footer && (
+          <Flex
+            align="center"
+            justify="center"
+            style={{
+              width: "100%",
+              padding: "0 12px",
+              ...transitionStyle(collapsed),
+            }}
+          >
+            {footer}
+          </Flex>
+        )}
       </Flex>
     </Sider>
   );

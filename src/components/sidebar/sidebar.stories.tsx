@@ -16,13 +16,9 @@ const meta: Meta<typeof Sidebar> = {
     menuProps: {
       control: { type: "object" },
     },
-    header: {
-      control: false,
-      description: "Custom header content",
-    },
-    footer: {
-      control: false,
-      description: "Custom footer content",
+    extra: {
+      control: { type: "object" },
+      description: "Extra content for the sidebar, such as header or footer",
     },
     width: {
       control: { type: "number" },
@@ -34,6 +30,7 @@ const meta: Meta<typeof Sidebar> = {
     },
   },
 };
+
 export default meta;
 
 type Story = StoryObj<typeof Sidebar>;
@@ -115,11 +112,13 @@ export const WithHeader: Story = {
     },
   ],
   args: {
-    header: (
-      <Flex align="center" justify="center" style={{ width: "100%" }}>
-        <Title level={3}>Your Brand Logo</Title>
-      </Flex>
-    ),
+    extra: {
+      header: (
+        <Flex align="center" justify="center" style={{ width: "100%" }}>
+          <Title level={3}>Custom Header</Title>
+        </Flex>
+      ),
+    },
     menuProps: {
       items: [
         {
@@ -170,11 +169,13 @@ export const WithFooter: Story = {
     },
   ],
   args: {
-    footer: (
-      <Flex align="center" justify="center" style={{ width: "100%" }}>
-        <Title level={3}>Your Custom Footer</Title>
-      </Flex>
-    ),
+    extra: {
+      footer: (
+        <Flex align="center" justify="center" style={{ width: "100%" }}>
+          <Title level={3}>Your Custom Footer</Title>
+        </Flex>
+      ),
+    },
     menuProps: {
       items: [
         {
@@ -228,6 +229,23 @@ export const WithCollapsible: Story = {
   ],
   args: {
     collapsible: true,
+    brandLogo: (
+      <Flex align="center" justify="space-between" style={{ width: "100%", padding: "0 12px" }}>
+        <Title level={3}>Brand Logo</Title>
+      </Flex>
+    ),
+    extra: {
+      header: (
+        <Flex align="center" justify="center" style={{ width: "100%" }}>
+          <Title level={4}>Collapsible Header</Title>
+        </Flex>
+      ),
+      footer: (
+        <Flex align="center" justify="center" style={{ width: "100%" }}>
+          <Title level={4}>Collapsible Footer</Title>
+        </Flex>
+      ),
+    },
     menuProps: {
       items: [
         {

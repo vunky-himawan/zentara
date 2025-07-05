@@ -19,7 +19,12 @@ export const SidebarConfigProvider: FC<ISidebarConfigProviderProps> = ({
   const [collapsed, setCollapsed] = useState(initialCollapsed || false);
 
   return (
-    <SidebarConfigContext.Provider value={{ collapsed, setCollapsed }}>
+    <SidebarConfigContext.Provider
+      value={{
+        collapsed,
+        setCollapsed,
+      }}
+    >
       {children}
     </SidebarConfigContext.Provider>
   );
