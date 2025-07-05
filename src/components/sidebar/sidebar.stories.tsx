@@ -5,6 +5,7 @@ import { Flex, type MenuProps, Typography } from "antd";
 import { Camera, LayoutDashboard, Settings } from "lucide-react";
 import { Sidebar } from ".";
 import { LucideIcon } from "../lucide-icon";
+import { SidebarConfigProvider } from "@/context/sidebar-config.provider";
 
 const { Title } = Typography;
 
@@ -160,9 +161,11 @@ export const WithFooter: Story = {
             },
           }}
         >
-          <div style={{ height: "100vh" }}>
-            <Story />
-          </div>
+          <SidebarConfigProvider>
+            <div style={{ height: "100vh" }}>
+              <Story />
+            </div>
+          </SidebarConfigProvider>
         </ThemeConfigProvider>
       );
       return <Wrapper />;
@@ -174,6 +177,7 @@ export const WithFooter: Story = {
         <Title level={3}>Your Custom Footer</Title>
       </Flex>
     ),
+    collapsible: true,
     menuProps: {
       items: [
         {
