@@ -1,6 +1,6 @@
 import { DEFAULT_COLORS } from "@/common/constants/color";
 import { ConfigProvider, type ThemeConfig, theme as antdTheme } from "antd";
-import { type FC, createContext, useCallback, useContext, useMemo, useState } from "react";
+import { type FC, createContext, useCallback, useMemo, useState } from "react";
 
 // Base theme colors interface
 interface ThemeColors {
@@ -50,7 +50,25 @@ interface IThemeConfigContext {
   getComponentTheme: (componentName?: ComponentType) => ThemeColors;
 }
 
-interface CustomThemeConfig extends Omit<ThemeConfig, "algorithm"> {
+interface CustomThemeConfig
+  extends Omit<
+    ThemeConfig,
+    | "algorithm"
+    | "colorPrimary"
+    | "colorSuccess"
+    | "colorWarning"
+    | "colorError"
+    | "colorInfo"
+    | "colorBgBase"
+    | "colorBgContainer"
+    | "colorText"
+    | "colorTextSecondary"
+    | "colorTextDisabled"
+    | "colorBorder"
+    | "colorLinkHover"
+    | "colorLinkActive"
+    | "boxShadow"
+  > {
   extra?: ThemeExtraToken;
   algorithm?: ThemeConfig["algorithm"];
 }

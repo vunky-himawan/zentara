@@ -5,6 +5,7 @@ import { Flex, type MenuProps, Typography } from "antd";
 import { Camera, LayoutDashboard, Settings } from "lucide-react";
 import { Sidebar } from ".";
 import { LucideIcon } from "../lucide-icon";
+import { SidebarConfigProvider } from "@/context/sidebar-config.provider";
 
 const { Title } = Typography;
 
@@ -194,5 +195,53 @@ export const WithFooter: Story = {
     controls: {
       exclude: ["collapsible"],
     },
+  },
+};
+
+export const WithCollapsible: Story = {
+  decorators: [
+    (Story) => {
+      const Wrapper = () => (
+        <ThemeConfigProvider
+          themeConfig={{
+            extra: {
+              components: {
+                Sidebar: {
+                  light: {
+                    ...DEFAULT_COLORS.light,
+                    background: "#85dcb8",
+                  },
+                },
+              },
+            },
+          }}
+        >
+          <SidebarConfigProvider>
+            <div style={{ height: "100vh" }}>
+              <Story />
+            </div>
+          </SidebarConfigProvider>
+        </ThemeConfigProvider>
+      );
+      return <Wrapper />;
+    },
+  ],
+  args: {
+    collapsible: true,
+    menuProps: {
+      items: [
+        {
+          key: "1",
+          icon: <LucideIcon Icon={LayoutDashboard} />,
+          label: "Dashboard",
+        },
+        {
+          key: "2",
+          icon: <LucideIcon Icon={Settings} />,
+          label: "Settings",
+        },
+      ],
+      defaultSelectedKeys: ["1"],
+    } satisfies MenuProps,
   },
 };
