@@ -161,11 +161,9 @@ export const WithFooter: Story = {
             },
           }}
         >
-          <SidebarConfigProvider>
-            <div style={{ height: "100vh" }}>
-              <Story />
-            </div>
-          </SidebarConfigProvider>
+          <div style={{ height: "100vh" }}>
+            <Story />
+          </div>
         </ThemeConfigProvider>
       );
       return <Wrapper />;
@@ -177,7 +175,6 @@ export const WithFooter: Story = {
         <Title level={3}>Your Custom Footer</Title>
       </Flex>
     ),
-    collapsible: true,
     menuProps: {
       items: [
         {
@@ -198,5 +195,53 @@ export const WithFooter: Story = {
     controls: {
       exclude: ["collapsible"],
     },
+  },
+};
+
+export const WithCollapsible: Story = {
+  decorators: [
+    (Story) => {
+      const Wrapper = () => (
+        <ThemeConfigProvider
+          themeConfig={{
+            extra: {
+              components: {
+                Sidebar: {
+                  light: {
+                    ...DEFAULT_COLORS.light,
+                    background: "#85dcb8",
+                  },
+                },
+              },
+            },
+          }}
+        >
+          <SidebarConfigProvider>
+            <div style={{ height: "100vh" }}>
+              <Story />
+            </div>
+          </SidebarConfigProvider>
+        </ThemeConfigProvider>
+      );
+      return <Wrapper />;
+    },
+  ],
+  args: {
+    collapsible: true,
+    menuProps: {
+      items: [
+        {
+          key: "1",
+          icon: <LucideIcon Icon={LayoutDashboard} />,
+          label: "Dashboard",
+        },
+        {
+          key: "2",
+          icon: <LucideIcon Icon={Settings} />,
+          label: "Settings",
+        },
+      ],
+      defaultSelectedKeys: ["1"],
+    } satisfies MenuProps,
   },
 };
