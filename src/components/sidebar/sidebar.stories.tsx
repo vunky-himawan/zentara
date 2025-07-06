@@ -263,3 +263,80 @@ export const WithCollapsible: Story = {
     } satisfies MenuProps,
   },
 };
+
+export const WithGroupedMenu: Story = {
+  decorators: [
+    (Story) => {
+      const Wrapper = () => (
+        <ThemeConfigProvider
+          themeConfig={{
+            extra: {
+              components: {
+                Sidebar: {
+                  light: {
+                    ...DEFAULT_COLORS.light,
+                    background: "#85dcb8",
+                  },
+                },
+              },
+            },
+          }}
+        >
+          <SidebarConfigProvider>
+            <div style={{ height: "100vh" }}>
+              <Story />
+            </div>
+          </SidebarConfigProvider>
+        </ThemeConfigProvider>
+      );
+      return <Wrapper />;
+    },
+  ],
+  args: {
+    collapsible: true,
+    brandLogo: (
+      <Flex align="center" justify="space-between" style={{ width: "100%", padding: "0 12px" }}>
+        <Title level={3}>Brand Logo</Title>
+      </Flex>
+    ),
+    extra: {
+      header: (
+        <Flex align="center" justify="center" style={{ width: "100%" }}>
+          <Title level={4}>Collapsible Header</Title>
+        </Flex>
+      ),
+      footer: (
+        <Flex align="center" justify="center" style={{ width: "100%" }}>
+          <Title level={4}>Collapsible Footer</Title>
+        </Flex>
+      ),
+    },
+    menuProps: {
+      items: [
+        {
+          key: "1",
+          icon: <LucideIcon Icon={LayoutDashboard} />,
+          label: "Dashboard",
+        },
+        {
+          key: "2",
+          icon: <LucideIcon Icon={Settings} />,
+          label: "Settings",
+          children: [
+            {
+              key: "2-1",
+              icon: <LucideIcon Icon={Settings} />,
+              label: "Sub Option 1",
+            },
+            {
+              key: "2-2",
+              icon: <LucideIcon Icon={Settings} />,
+              label: "Sub Option 2",
+            },
+          ],
+        },
+      ],
+      defaultSelectedKeys: ["1"],
+    } satisfies MenuProps,
+  },
+};
