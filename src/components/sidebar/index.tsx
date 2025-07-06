@@ -125,7 +125,11 @@ export const Sidebar: FC<SidebarProps & Omit<SiderProps, "collapsible">> = ({
         >
           <Col style={{ flex: 1, overflowY: "auto", height: "100%" }}>
             {menuProps && (
-              <Menu {...menuProps} style={{ backgroundColor: "transparent", border: "none" }} />
+              <Menu
+                mode="inline"
+                {...menuProps}
+                style={{ backgroundColor: "transparent", border: "none" }}
+              />
             )}
           </Col>
         </Space>
