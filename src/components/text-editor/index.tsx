@@ -35,12 +35,14 @@ interface TextEditorProps {
   content?: Content;
   onChange?: (content: Content) => void;
   menubarItems?: MenubarItem[];
+  placeholder?: string;
   featuresConfig?: FeaturesConfig;
 }
 
 export const TextEditor: FC<TextEditorProps> = ({
   content,
   onChange,
+  placeholder,
   menubarItems = DEFAULT_MENUBAR_ITEMS,
   featuresConfig = {},
 }) => {
@@ -58,7 +60,7 @@ export const TextEditor: FC<TextEditorProps> = ({
       StarterKit,
       TextStyle.configure({ mergeNestedSpanStyles: true }),
       Placeholder.configure({
-        placeholder: "Type something...",
+        placeholder: placeholder || "Start typing...",
         emptyEditorClass: styles["is-editor-empty"],
       }),
       Link.configure(linkConfig),
